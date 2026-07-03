@@ -1,17 +1,20 @@
 # Testimonials
 
-Testimonials is a WordPress plugin that owns a reusable testimonials content domain. It registers the custom post type, taxonomy and rewrites needed to publish testimonials while leaving visual presentation to the active theme.
+Testimonials is a WordPress plugin that owns a reusable testimonials content domain. It registers the custom post type, taxonomy, video URL metadata and rewrites needed to publish testimonials while leaving visual presentation to the active theme.
 
 ## What It Provides
 
 - Custom post type: `depoimento`
 - Custom taxonomy: `depoimento_categoria`
+- REST-enabled metadata:
+  - `_testimonials_video_url`
+- A WordPress admin meta box for the testimonial video URL
 - Rewrite rules for `/depoimentos/` and `/depoimentos/categoria/...`
 - GitHub Releases update integration through the plugin `Update URI`
 
 ## What It Does Not Provide
 
-This plugin does not render a public front end and does not define testimonial-specific metadata yet. Themes and integration plugins should consume the content domain and decide how to display or extend it.
+This plugin does not render a public front end. Themes and integration plugins should consume the content domain and decide how to display or extend it.
 
 For example:
 
@@ -25,6 +28,7 @@ The plugin keeps these identifiers stable so existing WordPress content remains 
 ```php
 testimonials_post_type(); // depoimento
 testimonials_taxonomy(); // depoimento_categoria
+testimonials_video_url_meta_key(); // _testimonials_video_url
 ```
 
 ## Installation

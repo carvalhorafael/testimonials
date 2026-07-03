@@ -10,12 +10,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class Testimonials_Content_Domain {
-	public const POST_TYPE         = 'depoimento';
-	public const TAXONOMY          = 'depoimento_categoria';
-	public const TESTIMONIALS_PATH = 'depoimentos';
+	public const POST_TYPE             = 'depoimento';
+	public const TAXONOMY              = 'depoimento_categoria';
+	public const TESTIMONIALS_PATH     = 'depoimentos';
+	public const VIDEO_URL_META_KEY    = '_testimonials_video_url';
+	public const META_BOX_ID           = 'testimonials-video';
+	public const META_BOX_NONCE_ACTION = 'testimonials_save_video_settings';
+	public const META_BOX_NONCE_NAME   = 'testimonials_video_nonce';
 
 	public function register_hooks(): void {
 		add_action( 'init', array( $this, 'register_content_types' ) );
+		add_action( 'init', array( $this, 'register_meta' ), 11 );
+		add_action( 'add_meta_boxes', array( $this, 'register_meta_box' ) );
+		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_meta_box' ) );
 	}
 
 	public function register_content_types(): void {
@@ -61,6 +68,77 @@ class Testimonials_Content_Domain {
 			'index.php?' . self::TAXONOMY . '=$matches[1]',
 			'top'
 		);
+	}
+
+	public function register_meta(): void {
+		register_post_meta(
+			self::POST_TYPE,
+			self::VIDEO_URL_META_KEY,
+			array(
+				'auth_callback'     => static function () {
+					return current_user_can( 'edit_posts' );
+				},
+				'sanitize_callback' => 'esc_url_raw',
+				'show_in_rest'      => true,
+				'single'            => true,
+				'type'              => 'string',
+			)
+		);
+	}
+
+	public function register_meta_box(): void {
+		add_meta_box(
+			self::META_BOX_ID,
+			__( 'Testimonial video', 'testimonials' ),
+			array( $this, 'render_meta_box' ),
+			self::POST_TYPE,
+			'side',
+			'default'
+		);
+	}
+
+	public function render_meta_box( WP_Post $post ): void {
+		$video_url = get_post_meta( $post->ID, self::VIDEO_URL_META_KEY, true );
+
+		wp_nonce_field( self::META_BOX_NONCE_ACTION, self::META_BOX_NONCE_NAME );
+		?>
+		<p>
+			<label for="testimonials-video-url"><?php esc_html_e( 'Video URL', 'testimonials' ); ?></label>
+			<input
+				class="widefat"
+				id="testimonials-video-url"
+				name="testimonials_video_url"
+				type="url"
+				value="<?php echo esc_attr( $video_url ); ?>"
+				placeholder="https://www.youtube.com/watch?v=..."
+			>
+		</p>
+		<?php
+	}
+
+	public function save_meta_box( int $post_id ): void {
+		$nonce = isset( $_POST[ self::META_BOX_NONCE_NAME ] ) ? sanitize_text_field( wp_unslash( $_POST[ self::META_BOX_NONCE_NAME ] ) ) : '';
+
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, self::META_BOX_NONCE_ACTION ) ) {
+			return;
+		}
+
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		$video_url = isset( $_POST['testimonials_video_url'] ) ? esc_url_raw( wp_unslash( $_POST['testimonials_video_url'] ) ) : '';
+
+		if ( '' === $video_url ) {
+			delete_post_meta( $post_id, self::VIDEO_URL_META_KEY );
+			return;
+		}
+
+		update_post_meta( $post_id, self::VIDEO_URL_META_KEY, $video_url );
 	}
 
 	/**
