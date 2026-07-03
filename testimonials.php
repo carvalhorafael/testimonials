@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Testimonials
  * Description: Registers the reusable Testimonials content domain for WordPress sites.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author: Rafael Carvalho
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TESTIMONIALS_VERSION', '0.1.0' );
+define( 'TESTIMONIALS_VERSION', '0.2.0' );
 define( 'TESTIMONIALS_FILE', __FILE__ );
 define( 'TESTIMONIALS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TESTIMONIALS_BASENAME', plugin_basename( __FILE__ ) );
