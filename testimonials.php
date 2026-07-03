@@ -50,6 +50,13 @@ function testimonials_taxonomy(): string {
 	return Testimonials_Content_Domain::TAXONOMY;
 }
 
+/**
+ * Returns the canonical testimonial video URL meta key.
+ */
+function testimonials_video_url_meta_key(): string {
+	return Testimonials_Content_Domain::VIDEO_URL_META_KEY;
+}
+
 register_activation_hook( __FILE__, array( 'Testimonials_Plugin', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'Testimonials_Plugin', 'deactivate' ) );
 
