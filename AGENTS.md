@@ -5,7 +5,7 @@
 Este repositorio contem o plugin WordPress `testimonials`.
 
 O objetivo do plugin e ser dono do dominio persistente de depoimentos:
-post type, taxonomia e rewrites. Temas devem consumir
+post type, taxonomia, metadados editoriais e rewrites. Temas devem consumir
 esse contrato para renderizacao, mas nao devem registrar novamente esse dominio.
 
 ## Fronteira de responsabilidade
@@ -14,6 +14,7 @@ O plugin e responsavel por:
 
 - registrar `depoimento`;
 - registrar `depoimento_categoria`;
+- registrar metadado canonico `_testimonials_video_url`;
 - expor funcoes/constantes publicas estaveis;
 - manter rewrites e flush em ativacao/desativacao;
 - fornecer testes para o contrato WordPress.
@@ -28,7 +29,7 @@ O plugin nao e responsavel por:
 ## Regras de trabalho no repositorio
 
 - Leia o codigo e a documentacao antes de alterar contratos publicos.
-- Preserve os slugs existentes, salvo decisao explicita de migracao.
+- Preserve os slugs e meta keys existentes, salvo decisao explicita de migracao.
 - Use prefixo interno `testimonials_` para funcoes publicas do plugin e
   `Testimonials_` para classes.
 - Quando expor hooks/options novos, prefira nomes especificos e documente no
@@ -42,7 +43,7 @@ O plugin nao e responsavel por:
 
 - Use `composer test:unit` para validacao rapida de regras puras.
 - Use `composer test:wordpress` para hooks WordPress, registros de CPT,
-  taxonomia e rewrites.
+  taxonomia, metadados, meta boxes, nonces e rewrites.
 - Use `composer test` antes de considerar uma mudanca pronta.
 - Se alterar empacotamento ou release, rode `composer package` e confira o ZIP.
 

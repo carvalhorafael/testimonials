@@ -29,4 +29,5 @@ require $_tests_dir . '/includes/bootstrap.php';
 
 if ( function_exists( 'testimonials' ) ) {
 	testimonials()->content_domain()->register_content_types();
+	testimonials()->content_domain()->register_meta();
 }
