@@ -16,10 +16,13 @@ class Testimonials_Plugin {
 
 	private Testimonials_Content_Domain $content_domain;
 
+	private Testimonials_Blocks $blocks;
+
 	private Testimonials_GitHub_Updater $github_updater;
 
 	private function __construct() {
 		$this->content_domain = new Testimonials_Content_Domain();
+		$this->blocks         = new Testimonials_Blocks();
 		$this->github_updater = new Testimonials_GitHub_Updater( TESTIMONIALS_FILE, TESTIMONIALS_VERSION );
 	}
 
@@ -40,6 +43,7 @@ class Testimonials_Plugin {
 
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		$this->content_domain->register_hooks();
+		$this->blocks->register_hooks();
 		$this->github_updater->register_hooks();
 	}
 
@@ -53,6 +57,10 @@ class Testimonials_Plugin {
 
 	public function content_domain(): Testimonials_Content_Domain {
 		return $this->content_domain;
+	}
+
+	public function blocks(): Testimonials_Blocks {
+		return $this->blocks;
 	}
 
 	public function github_updater(): Testimonials_GitHub_Updater {

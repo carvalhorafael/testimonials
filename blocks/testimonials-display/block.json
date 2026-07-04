@@ -1,0 +1,56 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "testimonials/testimonials-display",
+	"title": "Depoimentos",
+	"category": "widgets",
+	"icon": "format-quote",
+	"description": "Exibe depoimentos publicados com opções de seleção, quantidade, categoria e layout.",
+	"textdomain": "testimonials",
+	"attributes": {
+		"layout": {
+			"type": "string",
+			"default": "cards"
+		},
+		"selectionMode": {
+			"type": "string",
+			"default": "latest"
+		},
+		"count": {
+			"type": "number",
+			"default": 3
+		},
+		"testimonialIds": {
+			"type": "array",
+			"default": []
+		},
+		"categoryIds": {
+			"type": "array",
+			"default": []
+		},
+		"order": {
+			"type": "string",
+			"default": "desc"
+		},
+		"orderby": {
+			"type": "string",
+			"default": "date"
+		},
+		"showVideo": {
+			"type": "boolean",
+			"default": false
+		},
+		"showExcerpt": {
+			"type": "boolean",
+			"default": true
+		},
+		"showCategory": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"supports": {
+		"customClassName": true,
+		"html": false
+	}
+}
