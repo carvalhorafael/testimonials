@@ -46,6 +46,24 @@ final class TestimonialsDisplayBlockTest extends WP_UnitTestCase {
 		$this->assertLessThan( strpos( $output, 'First testimonial' ), strpos( $output, 'Second testimonial' ) );
 	}
 
+	public function test_render_student_details(): void {
+		$post_id = $this->create_testimonial( 'Fallback title', 'Approved testimonial' );
+
+		update_post_meta( $post_id, testimonials_student_name_meta_key(), 'Maria Silva' );
+		update_post_meta( $post_id, testimonials_approved_at_meta_key(), 'Medicina USP' );
+		update_post_meta( $post_id, testimonials_placement_meta_key(), '1o lugar' );
+
+		$output = $this->render_block( array( 'count' => 1 ) );
+
+		$this->assertStringContainsString( 'testimonials-card__person', $output );
+		$this->assertStringContainsString( 'Maria Silva', $output );
+		$this->assertStringContainsString( 'testimonials-card__student-details', $output );
+		$this->assertStringContainsString( 'testimonials-card__approved-at', $output );
+		$this->assertStringContainsString( 'Medicina USP', $output );
+		$this->assertStringContainsString( 'testimonials-card__placement', $output );
+		$this->assertStringContainsString( '1o lugar', $output );
+	}
+
 	public function test_render_filtered_by_category(): void {
 		$category_id = self::factory()->term->create(
 			array(
