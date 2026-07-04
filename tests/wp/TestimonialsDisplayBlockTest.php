@@ -6,7 +6,7 @@
  */
 
 final class TestimonialsDisplayBlockTest extends WP_UnitTestCase {
-	protected function set_up(): void {
+	public function set_up(): void {
 		parent::set_up();
 
 		if ( ! WP_Block_Type_Registry::get_instance()->is_registered( Testimonials_Blocks::TESTIMONIALS_DISPLAY_BLOCK ) ) {
