@@ -14,6 +14,9 @@ class Testimonials_Content_Domain {
 	public const TAXONOMY              = 'depoimento_categoria';
 	public const TESTIMONIALS_PATH     = 'depoimentos';
 	public const VIDEO_URL_META_KEY    = '_testimonials_video_url';
+	public const STUDENT_NAME_META_KEY = '_testimonials_student_name';
+	public const APPROVED_AT_META_KEY  = '_testimonials_approved_at';
+	public const PLACEMENT_META_KEY    = '_testimonials_placement';
 	public const META_BOX_ID           = 'testimonials-video';
 	public const META_BOX_NONCE_ACTION = 'testimonials_save_video_settings';
 	public const META_BOX_NONCE_NAME   = 'testimonials_video_nonce';
@@ -71,25 +74,16 @@ class Testimonials_Content_Domain {
 	}
 
 	public function register_meta(): void {
-		register_post_meta(
-			self::POST_TYPE,
-			self::VIDEO_URL_META_KEY,
-			array(
-				'auth_callback'     => static function () {
-					return current_user_can( 'edit_posts' );
-				},
-				'sanitize_callback' => 'esc_url_raw',
-				'show_in_rest'      => true,
-				'single'            => true,
-				'type'              => 'string',
-			)
-		);
+		$this->register_string_meta( self::VIDEO_URL_META_KEY, 'esc_url_raw' );
+		$this->register_string_meta( self::STUDENT_NAME_META_KEY, 'sanitize_text_field' );
+		$this->register_string_meta( self::APPROVED_AT_META_KEY, 'sanitize_text_field' );
+		$this->register_string_meta( self::PLACEMENT_META_KEY, 'sanitize_text_field' );
 	}
 
 	public function register_meta_box(): void {
 		add_meta_box(
 			self::META_BOX_ID,
-			__( 'Testimonial video', 'testimonials' ),
+			__( 'Testimonial details', 'testimonials' ),
 			array( $this, 'render_meta_box' ),
 			self::POST_TYPE,
 			'side',
@@ -98,10 +92,43 @@ class Testimonials_Content_Domain {
 	}
 
 	public function render_meta_box( WP_Post $post ): void {
-		$video_url = get_post_meta( $post->ID, self::VIDEO_URL_META_KEY, true );
+		$video_url    = get_post_meta( $post->ID, self::VIDEO_URL_META_KEY, true );
+		$student_name = get_post_meta( $post->ID, self::STUDENT_NAME_META_KEY, true );
+		$approved_at  = get_post_meta( $post->ID, self::APPROVED_AT_META_KEY, true );
+		$placement    = get_post_meta( $post->ID, self::PLACEMENT_META_KEY, true );
 
 		wp_nonce_field( self::META_BOX_NONCE_ACTION, self::META_BOX_NONCE_NAME );
 		?>
+		<p>
+			<label for="testimonials-student-name"><?php esc_html_e( 'Nome do aluno', 'testimonials' ); ?></label>
+			<input
+				class="widefat"
+				id="testimonials-student-name"
+				name="testimonials_student_name"
+				type="text"
+				value="<?php echo esc_attr( $student_name ); ?>"
+			>
+		</p>
+		<p>
+			<label for="testimonials-approved-at"><?php esc_html_e( 'Onde passou', 'testimonials' ); ?></label>
+			<input
+				class="widefat"
+				id="testimonials-approved-at"
+				name="testimonials_approved_at"
+				type="text"
+				value="<?php echo esc_attr( $approved_at ); ?>"
+			>
+		</p>
+		<p>
+			<label for="testimonials-placement"><?php esc_html_e( 'Colocação', 'testimonials' ); ?></label>
+			<input
+				class="widefat"
+				id="testimonials-placement"
+				name="testimonials_placement"
+				type="text"
+				value="<?php echo esc_attr( $placement ); ?>"
+			>
+		</p>
 		<p>
 			<label for="testimonials-video-url"><?php esc_html_e( 'Video URL', 'testimonials' ); ?></label>
 			<input
@@ -131,14 +158,59 @@ class Testimonials_Content_Domain {
 			return;
 		}
 
-		$video_url = isset( $_POST['testimonials_video_url'] ) ? esc_url_raw( wp_unslash( $_POST['testimonials_video_url'] ) ) : '';
+		$this->save_url_meta( $post_id, 'testimonials_video_url', self::VIDEO_URL_META_KEY );
+		$this->save_text_meta( $post_id, 'testimonials_student_name', self::STUDENT_NAME_META_KEY );
+		$this->save_text_meta( $post_id, 'testimonials_approved_at', self::APPROVED_AT_META_KEY );
+		$this->save_text_meta( $post_id, 'testimonials_placement', self::PLACEMENT_META_KEY );
+	}
 
-		if ( '' === $video_url ) {
-			delete_post_meta( $post_id, self::VIDEO_URL_META_KEY );
+	/**
+	 * @param callable|string $sanitize_callback Sanitization callback.
+	 */
+	private function register_string_meta( string $meta_key, callable|string $sanitize_callback ): void {
+		register_post_meta(
+			self::POST_TYPE,
+			$meta_key,
+			array(
+				'auth_callback'     => static function () {
+					return current_user_can( 'edit_posts' );
+				},
+				'sanitize_callback' => $sanitize_callback,
+				'show_in_rest'      => true,
+				'single'            => true,
+				'type'              => 'string',
+			)
+		);
+	}
+
+	private function save_url_meta( int $post_id, string $post_key, string $meta_key ): void {
+		$value = esc_url_raw( $this->posted_scalar_value( $post_key ) );
+
+		if ( '' === $value ) {
+			delete_post_meta( $post_id, $meta_key );
 			return;
 		}
 
-		update_post_meta( $post_id, self::VIDEO_URL_META_KEY, $video_url );
+		update_post_meta( $post_id, $meta_key, $value );
+	}
+
+	private function save_text_meta( int $post_id, string $post_key, string $meta_key ): void {
+		$value = sanitize_text_field( $this->posted_scalar_value( $post_key ) );
+
+		if ( '' === $value ) {
+			delete_post_meta( $post_id, $meta_key );
+			return;
+		}
+
+		update_post_meta( $post_id, $meta_key, $value );
+	}
+
+	private function posted_scalar_value( string $post_key ): string {
+		if ( ! isset( $_POST[ $post_key ] ) || ! is_scalar( $_POST[ $post_key ] ) ) {
+			return '';
+		}
+
+		return (string) wp_unslash( $_POST[ $post_key ] );
 	}
 
 	/**

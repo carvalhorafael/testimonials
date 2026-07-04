@@ -1,6 +1,6 @@
 # Testimonials
 
-Testimonials is a WordPress plugin that owns a reusable testimonials content domain. It registers the custom post type, taxonomy, video URL metadata and rewrites needed to publish testimonials while leaving visual presentation to the active theme.
+Testimonials is a WordPress plugin that owns a reusable testimonials content domain. It registers the custom post type, taxonomy, student approval metadata, video URL metadata and rewrites needed to publish testimonials while leaving visual presentation to the active theme.
 
 ## What It Provides
 
@@ -8,7 +8,10 @@ Testimonials is a WordPress plugin that owns a reusable testimonials content dom
 - Custom taxonomy: `depoimento_categoria`
 - REST-enabled metadata:
   - `_testimonials_video_url`
-- A WordPress admin meta box for the testimonial video URL
+  - `_testimonials_student_name`
+  - `_testimonials_approved_at`
+  - `_testimonials_placement`
+- A WordPress admin meta box for testimonial details
 - A dynamic Gutenberg block: `testimonials/testimonials-display`
 - Rewrite rules for `/depoimentos/` and `/depoimentos/categoria/...`
 - GitHub Releases update integration through the plugin `Update URI`
@@ -31,6 +34,9 @@ The plugin keeps these identifiers stable so existing WordPress content remains 
 testimonials_post_type(); // depoimento
 testimonials_taxonomy(); // depoimento_categoria
 testimonials_video_url_meta_key(); // _testimonials_video_url
+testimonials_student_name_meta_key(); // _testimonials_student_name
+testimonials_approved_at_meta_key(); // _testimonials_approved_at
+testimonials_placement_meta_key(); // _testimonials_placement
 ```
 
 The reusable display block is registered by the plugin and rendered on the server:
@@ -39,7 +45,7 @@ The reusable display block is registered by the plugin and rendered on the serve
 testimonials/testimonials-display
 ```
 
-It emits neutral classes such as `.testimonials-block`, `.testimonials-block--cards`, `.testimonials-block--grid`, `.testimonials-block--slider`, `.testimonials-block--video-slider`, `.testimonials-card`, `.testimonials-card__quote`, `.testimonials-card__media`, `.testimonials-card__video`, `.testimonials-card__person` and `.testimonials-card__category`.
+It emits neutral classes such as `.testimonials-block`, `.testimonials-block--cards`, `.testimonials-block--grid`, `.testimonials-block--slider`, `.testimonials-block--video-slider`, `.testimonials-card`, `.testimonials-card__quote`, `.testimonials-card__media`, `.testimonials-card__video`, `.testimonials-card__person`, `.testimonials-card__student-details`, `.testimonials-card__approved-at`, `.testimonials-card__placement` and `.testimonials-card__category`.
 
 ## Installation
 
