@@ -9,16 +9,18 @@ Testimonials is a WordPress plugin that owns a reusable testimonials content dom
 - REST-enabled metadata:
   - `_testimonials_video_url`
 - A WordPress admin meta box for the testimonial video URL
+- A dynamic Gutenberg block: `testimonials/testimonials-display`
 - Rewrite rules for `/depoimentos/` and `/depoimentos/categoria/...`
 - GitHub Releases update integration through the plugin `Update URI`
 
 ## What It Does Not Provide
 
-This plugin does not render a public front end. Themes and integration plugins should consume the content domain and decide how to display or extend it.
+This plugin does not own a site's visual identity. Themes and integration plugins should consume the content domain and decide how to style or extend it.
 
 For example:
 
 - A theme may provide `single-depoimento.php` and `taxonomy-depoimento_categoria.php`.
+- A theme may style the neutral block classes emitted by `testimonials/testimonials-display`.
 - A companion plugin may add metadata or import logic without re-registering the content domain.
 
 ## Public Contract
@@ -30,6 +32,14 @@ testimonials_post_type(); // depoimento
 testimonials_taxonomy(); // depoimento_categoria
 testimonials_video_url_meta_key(); // _testimonials_video_url
 ```
+
+The reusable display block is registered by the plugin and rendered on the server:
+
+```text
+testimonials/testimonials-display
+```
+
+It emits neutral classes such as `.testimonials-block`, `.testimonials-block--cards`, `.testimonials-block--grid`, `.testimonials-block--slider`, `.testimonials-block--video-slider`, `.testimonials-card`, `.testimonials-card__quote`, `.testimonials-card__media`, `.testimonials-card__video`, `.testimonials-card__person` and `.testimonials-card__category`.
 
 ## Installation
 
