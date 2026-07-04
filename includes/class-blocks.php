@@ -190,17 +190,23 @@ class Testimonials_Blocks {
 	 * @param array<string, mixed> $attributes Block attributes.
 	 */
 	private function render_testimonial_card( WP_Post $post, array $attributes ): string {
-		$video_url = (string) get_post_meta( $post->ID, testimonials_video_url_meta_key(), true );
-		$media     = $this->render_media( $post, $video_url, $attributes );
-		$category  = $attributes['showCategory'] ? $this->render_category( $post ) : '';
-		$quote     = $attributes['showExcerpt'] ? $this->get_quote( $post ) : '';
+		$video_url    = (string) get_post_meta( $post->ID, testimonials_video_url_meta_key(), true );
+		$student_name = (string) get_post_meta( $post->ID, testimonials_student_name_meta_key(), true );
+		$approved_at  = (string) get_post_meta( $post->ID, testimonials_approved_at_meta_key(), true );
+		$placement    = (string) get_post_meta( $post->ID, testimonials_placement_meta_key(), true );
+		$person       = '' !== $student_name ? $student_name : get_the_title( $post );
+		$media        = $this->render_media( $post, $video_url, $attributes );
+		$category     = $attributes['showCategory'] ? $this->render_category( $post ) : '';
+		$quote        = $attributes['showExcerpt'] ? $this->get_quote( $post ) : '';
+		$details      = $this->render_student_details( $approved_at, $placement );
 
 		return sprintf(
-			'<article class="testimonials-card">%1$s%2$s%3$s<h3 class="testimonials-card__person">%4$s</h3></article>',
+			'<article class="testimonials-card">%1$s%2$s%3$s<h3 class="testimonials-card__person">%4$s</h3>%5$s</article>',
 			$media,
 			'' !== $quote ? sprintf( '<div class="testimonials-card__quote">%s</div>', wp_kses_post( wpautop( $quote ) ) ) : '',
 			$category,
-			esc_html( get_the_title( $post ) )
+			esc_html( $person ),
+			$details
 		);
 	}
 
@@ -244,6 +250,33 @@ class Testimonials_Blocks {
 		return sprintf(
 			'<div class="testimonials-card__category">%s</div>',
 			esc_html( $term->name )
+		);
+	}
+
+	private function render_student_details( string $approved_at, string $placement ): string {
+		$details = array();
+
+		if ( '' !== $approved_at ) {
+			$details[] = sprintf(
+				'<span class="testimonials-card__approved-at">%s</span>',
+				esc_html( $approved_at )
+			);
+		}
+
+		if ( '' !== $placement ) {
+			$details[] = sprintf(
+				'<span class="testimonials-card__placement">%s</span>',
+				esc_html( $placement )
+			);
+		}
+
+		if ( array() === $details ) {
+			return '';
+		}
+
+		return sprintf(
+			'<div class="testimonials-card__student-details">%s</div>',
+			implode( '', $details )
 		);
 	}
 
