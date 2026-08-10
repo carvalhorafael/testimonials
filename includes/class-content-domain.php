@@ -10,16 +10,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class Testimonials_Content_Domain {
-	public const POST_TYPE             = 'depoimento';
-	public const TAXONOMY              = 'depoimento_categoria';
-	public const TESTIMONIALS_PATH     = 'depoimentos';
-	public const VIDEO_URL_META_KEY    = '_testimonials_video_url';
-	public const STUDENT_NAME_META_KEY = '_testimonials_student_name';
-	public const APPROVED_AT_META_KEY  = '_testimonials_approved_at';
-	public const PLACEMENT_META_KEY    = '_testimonials_placement';
-	public const META_BOX_ID           = 'testimonials-video';
-	public const META_BOX_NONCE_ACTION = 'testimonials_save_video_settings';
-	public const META_BOX_NONCE_NAME   = 'testimonials_video_nonce';
+	public const POST_TYPE                           = 'depoimento';
+	public const TAXONOMY                            = 'depoimento_categoria';
+	public const TESTIMONIALS_PATH                   = 'depoimentos';
+	public const VIDEO_URL_META_KEY                  = '_testimonials_video_url';
+	public const STUDENT_NAME_META_KEY               = '_testimonials_student_name';
+	public const APPROVED_AT_META_KEY                = '_testimonials_approved_at';
+	public const PLACEMENT_META_KEY                  = '_testimonials_placement';
+	public const COURSE_META_KEY                     = '_testimonials_course';
+	public const INSTITUTION_META_KEY                = '_testimonials_institution';
+	public const APPROVAL_YEAR_META_KEY              = '_testimonials_approval_year';
+	public const EVIDENCE_REFERENCE_META_KEY         = '_testimonials_evidence_reference';
+	public const VERIFICATION_STATUS_META_KEY        = '_testimonials_verification_status';
+	public const PUBLICATION_CONSENT_STATUS_META_KEY = '_testimonials_publication_consent_status';
+	public const HOME_PROOF_ENABLED_META_KEY         = '_testimonials_home_proof_enabled';
+	public const VERIFICATION_PENDING                = 'pending';
+	public const VERIFICATION_VERIFIED               = 'verified';
+	public const VERIFICATION_REJECTED               = 'rejected';
+	public const CONSENT_UNKNOWN                     = 'unknown';
+	public const CONSENT_CONFIRMED                   = 'confirmed';
+	public const CONSENT_REVOKED                     = 'revoked';
+	public const META_BOX_ID                         = 'testimonials-video';
+	public const META_BOX_NONCE_ACTION               = 'testimonials_save_video_settings';
+	public const META_BOX_NONCE_NAME                 = 'testimonials_video_nonce';
 
 	public function register_hooks(): void {
 		add_action( 'init', array( $this, 'register_content_types' ) );
@@ -78,6 +91,13 @@ class Testimonials_Content_Domain {
 		$this->register_string_meta( self::STUDENT_NAME_META_KEY, 'sanitize_text_field' );
 		$this->register_string_meta( self::APPROVED_AT_META_KEY, 'sanitize_text_field' );
 		$this->register_string_meta( self::PLACEMENT_META_KEY, 'sanitize_text_field' );
+		$this->register_string_meta( self::COURSE_META_KEY, 'sanitize_text_field' );
+		$this->register_string_meta( self::INSTITUTION_META_KEY, 'sanitize_text_field' );
+		$this->register_string_meta( self::APPROVAL_YEAR_META_KEY, array( $this, 'sanitize_approval_year' ) );
+		$this->register_string_meta( self::EVIDENCE_REFERENCE_META_KEY, 'sanitize_text_field', false );
+		$this->register_string_meta( self::VERIFICATION_STATUS_META_KEY, array( $this, 'sanitize_verification_status' ), false );
+		$this->register_string_meta( self::PUBLICATION_CONSENT_STATUS_META_KEY, array( $this, 'sanitize_publication_consent_status' ), false );
+		$this->register_boolean_meta( self::HOME_PROOF_ENABLED_META_KEY );
 	}
 
 	public function register_meta_box(): void {
@@ -92,10 +112,20 @@ class Testimonials_Content_Domain {
 	}
 
 	public function render_meta_box( WP_Post $post ): void {
-		$video_url    = get_post_meta( $post->ID, self::VIDEO_URL_META_KEY, true );
-		$student_name = get_post_meta( $post->ID, self::STUDENT_NAME_META_KEY, true );
-		$approved_at  = get_post_meta( $post->ID, self::APPROVED_AT_META_KEY, true );
-		$placement    = get_post_meta( $post->ID, self::PLACEMENT_META_KEY, true );
+		$video_url                 = get_post_meta( $post->ID, self::VIDEO_URL_META_KEY, true );
+		$student_name              = get_post_meta( $post->ID, self::STUDENT_NAME_META_KEY, true );
+		$approved_at               = get_post_meta( $post->ID, self::APPROVED_AT_META_KEY, true );
+		$placement                 = get_post_meta( $post->ID, self::PLACEMENT_META_KEY, true );
+		$course                    = get_post_meta( $post->ID, self::COURSE_META_KEY, true );
+		$institution               = get_post_meta( $post->ID, self::INSTITUTION_META_KEY, true );
+		$approval_year             = get_post_meta( $post->ID, self::APPROVAL_YEAR_META_KEY, true );
+		$evidence_reference        = get_post_meta( $post->ID, self::EVIDENCE_REFERENCE_META_KEY, true );
+		$verification_status       = get_post_meta( $post->ID, self::VERIFICATION_STATUS_META_KEY, true );
+		$publication_consent_status = get_post_meta( $post->ID, self::PUBLICATION_CONSENT_STATUS_META_KEY, true );
+		$home_proof_enabled        = (bool) get_post_meta( $post->ID, self::HOME_PROOF_ENABLED_META_KEY, true );
+
+		$verification_status        = $verification_status ? $verification_status : self::VERIFICATION_PENDING;
+		$publication_consent_status = $publication_consent_status ? $publication_consent_status : self::CONSENT_UNKNOWN;
 
 		wp_nonce_field( self::META_BOX_NONCE_ACTION, self::META_BOX_NONCE_NAME );
 		?>
@@ -130,6 +160,38 @@ class Testimonials_Content_Domain {
 			>
 		</p>
 		<p>
+			<label for="testimonials-course"><?php esc_html_e( 'Curso', 'testimonials' ); ?></label>
+			<input
+				class="widefat"
+				id="testimonials-course"
+				name="testimonials_course"
+				type="text"
+				value="<?php echo esc_attr( $course ); ?>"
+			>
+		</p>
+		<p>
+			<label for="testimonials-institution"><?php esc_html_e( 'Instituição', 'testimonials' ); ?></label>
+			<input
+				class="widefat"
+				id="testimonials-institution"
+				name="testimonials_institution"
+				type="text"
+				value="<?php echo esc_attr( $institution ); ?>"
+			>
+		</p>
+		<p>
+			<label for="testimonials-approval-year"><?php esc_html_e( 'Ano da aprovação', 'testimonials' ); ?></label>
+			<input
+				class="small-text"
+				id="testimonials-approval-year"
+				max="<?php echo esc_attr( (string) ( (int) gmdate( 'Y' ) + 1 ) ); ?>"
+				min="1900"
+				name="testimonials_approval_year"
+				type="number"
+				value="<?php echo esc_attr( $approval_year ); ?>"
+			>
+		</p>
+		<p>
 			<label for="testimonials-video-url"><?php esc_html_e( 'Video URL', 'testimonials' ); ?></label>
 			<input
 				class="widefat"
@@ -139,6 +201,42 @@ class Testimonials_Content_Domain {
 				value="<?php echo esc_attr( $video_url ); ?>"
 				placeholder="https://www.youtube.com/watch?v=..."
 			>
+		</p>
+		<hr>
+		<p>
+			<label for="testimonials-evidence-reference"><strong><?php esc_html_e( 'Fonte de verificação', 'testimonials' ); ?></strong></label>
+			<input
+				class="widefat"
+				id="testimonials-evidence-reference"
+				name="testimonials_evidence_reference"
+				type="text"
+				value="<?php echo esc_attr( $evidence_reference ); ?>"
+			>
+			<small><?php esc_html_e( 'Referência interna ou URL. Este valor não é exposto pela API REST.', 'testimonials' ); ?></small>
+		</p>
+		<p>
+			<label for="testimonials-verification-status"><strong><?php esc_html_e( 'Verificação dos dados', 'testimonials' ); ?></strong></label>
+			<select class="widefat" id="testimonials-verification-status" name="testimonials_verification_status">
+				<option value="<?php echo esc_attr( self::VERIFICATION_PENDING ); ?>"<?php selected( $verification_status, self::VERIFICATION_PENDING ); ?>><?php esc_html_e( 'Pendente', 'testimonials' ); ?></option>
+				<option value="<?php echo esc_attr( self::VERIFICATION_VERIFIED ); ?>"<?php selected( $verification_status, self::VERIFICATION_VERIFIED ); ?>><?php esc_html_e( 'Verificado', 'testimonials' ); ?></option>
+				<option value="<?php echo esc_attr( self::VERIFICATION_REJECTED ); ?>"<?php selected( $verification_status, self::VERIFICATION_REJECTED ); ?>><?php esc_html_e( 'Rejeitado', 'testimonials' ); ?></option>
+			</select>
+		</p>
+		<p>
+			<label for="testimonials-publication-consent-status"><strong><?php esc_html_e( 'Autorização de publicação', 'testimonials' ); ?></strong></label>
+			<select class="widefat" id="testimonials-publication-consent-status" name="testimonials_publication_consent_status">
+				<option value="<?php echo esc_attr( self::CONSENT_UNKNOWN ); ?>"<?php selected( $publication_consent_status, self::CONSENT_UNKNOWN ); ?>><?php esc_html_e( 'Não confirmada', 'testimonials' ); ?></option>
+				<option value="<?php echo esc_attr( self::CONSENT_CONFIRMED ); ?>"<?php selected( $publication_consent_status, self::CONSENT_CONFIRMED ); ?>><?php esc_html_e( 'Confirmada', 'testimonials' ); ?></option>
+				<option value="<?php echo esc_attr( self::CONSENT_REVOKED ); ?>"<?php selected( $publication_consent_status, self::CONSENT_REVOKED ); ?>><?php esc_html_e( 'Revogada', 'testimonials' ); ?></option>
+			</select>
+		</p>
+		<p>
+			<label>
+				<input name="testimonials_home_proof_enabled" type="checkbox" value="1"<?php checked( $home_proof_enabled ); ?>>
+				<?php esc_html_e( 'Disponibilizar para a prova social da home', 'testimonials' ); ?>
+			</label>
+			<br>
+			<small><?php esc_html_e( 'A marcação só produz efeito quando o depoimento está publicado, possui imagem destacada, nome, curso, instituição, fonte, dados verificados e autorização confirmada.', 'testimonials' ); ?></small>
 		</p>
 		<?php
 	}
@@ -154,6 +252,10 @@ class Testimonials_Content_Domain {
 			return;
 		}
 
+		if ( wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
 		}
@@ -162,23 +264,48 @@ class Testimonials_Content_Domain {
 		$this->save_text_meta( $post_id, 'testimonials_student_name', self::STUDENT_NAME_META_KEY );
 		$this->save_text_meta( $post_id, 'testimonials_approved_at', self::APPROVED_AT_META_KEY );
 		$this->save_text_meta( $post_id, 'testimonials_placement', self::PLACEMENT_META_KEY );
+		$this->save_text_meta( $post_id, 'testimonials_course', self::COURSE_META_KEY );
+		$this->save_text_meta( $post_id, 'testimonials_institution', self::INSTITUTION_META_KEY );
+		$this->save_approval_year_meta( $post_id );
+		$this->save_text_meta( $post_id, 'testimonials_evidence_reference', self::EVIDENCE_REFERENCE_META_KEY );
+		$this->save_choice_meta( $post_id, 'testimonials_verification_status', self::VERIFICATION_STATUS_META_KEY, array( $this, 'sanitize_verification_status' ) );
+		$this->save_choice_meta( $post_id, 'testimonials_publication_consent_status', self::PUBLICATION_CONSENT_STATUS_META_KEY, array( $this, 'sanitize_publication_consent_status' ) );
+		$this->save_boolean_meta( $post_id, 'testimonials_home_proof_enabled', self::HOME_PROOF_ENABLED_META_KEY );
 	}
 
 	/**
 	 * @param callable|string $sanitize_callback Sanitization callback.
 	 */
-	private function register_string_meta( string $meta_key, callable|string $sanitize_callback ): void {
+	private function register_string_meta( string $meta_key, callable|string $sanitize_callback, bool $show_in_rest = true ): void {
 		register_post_meta(
 			self::POST_TYPE,
 			$meta_key,
 			array(
-				'auth_callback'     => static function () {
-					return current_user_can( 'edit_posts' );
+				'auth_callback'     => static function ( $allowed, $meta_key, $post_id ) {
+					return current_user_can( 'edit_post', (int) $post_id );
 				},
 				'sanitize_callback' => $sanitize_callback,
-				'show_in_rest'      => true,
+				'show_in_rest'      => $show_in_rest,
 				'single'            => true,
 				'type'              => 'string',
+			)
+		);
+	}
+
+	private function register_boolean_meta( string $meta_key ): void {
+		register_post_meta(
+			self::POST_TYPE,
+			$meta_key,
+			array(
+				'auth_callback'     => static function ( $allowed, $meta_key, $post_id ) {
+					return current_user_can( 'edit_post', (int) $post_id );
+				},
+				'sanitize_callback' => static function ( $value ) {
+					return (bool) $value;
+				},
+				'show_in_rest'      => false,
+				'single'            => true,
+				'type'              => 'boolean',
 			)
 		);
 	}
@@ -203,6 +330,87 @@ class Testimonials_Content_Domain {
 		}
 
 		update_post_meta( $post_id, $meta_key, $value );
+	}
+
+	private function save_approval_year_meta( int $post_id ): void {
+		$value = $this->sanitize_approval_year( $this->posted_scalar_value( 'testimonials_approval_year' ) );
+
+		if ( '' === $value ) {
+			delete_post_meta( $post_id, self::APPROVAL_YEAR_META_KEY );
+			return;
+		}
+
+		update_post_meta( $post_id, self::APPROVAL_YEAR_META_KEY, $value );
+	}
+
+	private function save_choice_meta( int $post_id, string $post_key, string $meta_key, callable $sanitize_callback ): void {
+		$value = (string) call_user_func( $sanitize_callback, $this->posted_scalar_value( $post_key ) );
+
+		if ( '' === $value ) {
+			delete_post_meta( $post_id, $meta_key );
+			return;
+		}
+
+		update_post_meta( $post_id, $meta_key, $value );
+	}
+
+	private function save_boolean_meta( int $post_id, string $post_key, string $meta_key ): void {
+		if ( '1' !== $this->posted_scalar_value( $post_key ) ) {
+			delete_post_meta( $post_id, $meta_key );
+			return;
+		}
+
+		update_post_meta( $post_id, $meta_key, true );
+	}
+
+	public function sanitize_approval_year( mixed $value ): string {
+		$year         = is_scalar( $value ) ? (string) $value : '';
+		$current_year = (int) gmdate( 'Y' );
+
+		if ( ! preg_match( '/^\d{4}$/', $year ) ) {
+			return '';
+		}
+
+		$year_number = (int) $year;
+
+		return $year_number >= 1900 && $year_number <= $current_year + 1 ? (string) $year_number : '';
+	}
+
+	public function sanitize_verification_status( mixed $value ): string {
+		$value   = is_scalar( $value ) ? (string) $value : '';
+		$allowed = array( self::VERIFICATION_PENDING, self::VERIFICATION_VERIFIED, self::VERIFICATION_REJECTED );
+
+		return in_array( $value, $allowed, true ) ? $value : self::VERIFICATION_PENDING;
+	}
+
+	public function sanitize_publication_consent_status( mixed $value ): string {
+		$value   = is_scalar( $value ) ? (string) $value : '';
+		$allowed = array( self::CONSENT_UNKNOWN, self::CONSENT_CONFIRMED, self::CONSENT_REVOKED );
+
+		return in_array( $value, $allowed, true ) ? $value : self::CONSENT_UNKNOWN;
+	}
+
+	public function is_home_proof_eligible( int $post_id ): bool {
+		if ( self::POST_TYPE !== get_post_type( $post_id ) || 'publish' !== get_post_status( $post_id ) || ! has_post_thumbnail( $post_id ) ) {
+			return false;
+		}
+
+		$required_text_meta = array(
+			self::STUDENT_NAME_META_KEY,
+			self::COURSE_META_KEY,
+			self::INSTITUTION_META_KEY,
+			self::EVIDENCE_REFERENCE_META_KEY,
+		);
+
+		foreach ( $required_text_meta as $meta_key ) {
+			if ( '' === trim( (string) get_post_meta( $post_id, $meta_key, true ) ) ) {
+				return false;
+			}
+		}
+
+		return self::VERIFICATION_VERIFIED === get_post_meta( $post_id, self::VERIFICATION_STATUS_META_KEY, true )
+			&& self::CONSENT_CONFIRMED === get_post_meta( $post_id, self::PUBLICATION_CONSENT_STATUS_META_KEY, true )
+			&& (bool) get_post_meta( $post_id, self::HOME_PROOF_ENABLED_META_KEY, true );
 	}
 
 	private function posted_scalar_value( string $post_key ): string {

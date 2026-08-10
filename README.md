@@ -11,6 +11,10 @@ Testimonials is a WordPress plugin that owns a reusable testimonials content dom
   - `_testimonials_student_name`
   - `_testimonials_approved_at`
   - `_testimonials_placement`
+  - `_testimonials_course`
+  - `_testimonials_institution`
+  - `_testimonials_approval_year`
+- Private editorial metadata for evidence, verification, publication consent and home proof selection
 - A WordPress admin meta box for testimonial details
 - A dynamic Gutenberg block: `testimonials/testimonials-display`
 - Rewrite rules for `/depoimentos/` and `/depoimentos/categoria/...`
@@ -37,7 +41,27 @@ testimonials_video_url_meta_key(); // _testimonials_video_url
 testimonials_student_name_meta_key(); // _testimonials_student_name
 testimonials_approved_at_meta_key(); // _testimonials_approved_at
 testimonials_placement_meta_key(); // _testimonials_placement
+testimonials_course_meta_key(); // _testimonials_course
+testimonials_institution_meta_key(); // _testimonials_institution
+testimonials_approval_year_meta_key(); // _testimonials_approval_year
 ```
+
+Editorial workflow metadata is intentionally excluded from the REST API:
+
+```php
+testimonials_evidence_reference_meta_key();
+testimonials_verification_status_meta_key();
+testimonials_publication_consent_status_meta_key();
+testimonials_home_proof_enabled_meta_key();
+```
+
+A theme can check whether a published record has all required public data, a featured image, an evidence reference, verified facts, confirmed publication consent and explicit home selection:
+
+```php
+testimonials_is_home_proof_eligible( $post_id );
+```
+
+Approval year is optional. A record cannot become eligible for home proof without name, course, institution and an internal or public evidence reference. Revoking publication consent immediately makes it ineligible without deleting the testimonial.
 
 The reusable display block is registered by the plugin and rendered on the server:
 
