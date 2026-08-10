@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Testimonials
  * Description: Registers the reusable Testimonials content domain for WordPress sites.
- * Version: 0.4.0
+ * Version: 0.5.0
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author: Rafael Carvalho
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TESTIMONIALS_VERSION', '0.4.0' );
+define( 'TESTIMONIALS_VERSION', '0.5.0' );
 define( 'TESTIMONIALS_FILE', __FILE__ );
 define( 'TESTIMONIALS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TESTIMONIALS_BASENAME', plugin_basename( __FILE__ ) );
@@ -77,6 +77,62 @@ function testimonials_approved_at_meta_key(): string {
  */
 function testimonials_placement_meta_key(): string {
 	return Testimonials_Content_Domain::PLACEMENT_META_KEY;
+}
+
+/**
+ * Returns the canonical testimonial course meta key.
+ */
+function testimonials_course_meta_key(): string {
+	return Testimonials_Content_Domain::COURSE_META_KEY;
+}
+
+/**
+ * Returns the canonical testimonial institution meta key.
+ */
+function testimonials_institution_meta_key(): string {
+	return Testimonials_Content_Domain::INSTITUTION_META_KEY;
+}
+
+/**
+ * Returns the canonical testimonial approval year meta key.
+ */
+function testimonials_approval_year_meta_key(): string {
+	return Testimonials_Content_Domain::APPROVAL_YEAR_META_KEY;
+}
+
+/**
+ * Returns the internal testimonial evidence reference meta key.
+ */
+function testimonials_evidence_reference_meta_key(): string {
+	return Testimonials_Content_Domain::EVIDENCE_REFERENCE_META_KEY;
+}
+
+/**
+ * Returns the internal testimonial verification status meta key.
+ */
+function testimonials_verification_status_meta_key(): string {
+	return Testimonials_Content_Domain::VERIFICATION_STATUS_META_KEY;
+}
+
+/**
+ * Returns the internal testimonial publication consent status meta key.
+ */
+function testimonials_publication_consent_status_meta_key(): string {
+	return Testimonials_Content_Domain::PUBLICATION_CONSENT_STATUS_META_KEY;
+}
+
+/**
+ * Returns the internal testimonial home proof selection meta key.
+ */
+function testimonials_home_proof_enabled_meta_key(): string {
+	return Testimonials_Content_Domain::HOME_PROOF_ENABLED_META_KEY;
+}
+
+/**
+ * Determines whether a testimonial can be used as verifiable home proof.
+ */
+function testimonials_is_home_proof_eligible( int $post_id ): bool {
+	return testimonials()->content_domain()->is_home_proof_eligible( $post_id );
 }
 
 register_activation_hook( __FILE__, array( 'Testimonials_Plugin', 'activate' ) );

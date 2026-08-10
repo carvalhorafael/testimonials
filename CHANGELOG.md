@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 - verifiable home proof
+
+- Added course, institution and approval year metadata for verifiable student records.
+- Added private evidence, verification, publication consent and home proof selection metadata.
+- Added an eligibility contract that prevents incomplete, unverified or unauthorized records from being used as home proof.
+
 ## 0.2.0 - video metadata
 
 - Added the canonical testimonial video URL metadata contract.
