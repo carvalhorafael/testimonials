@@ -38,10 +38,13 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$registered_meta = get_registered_meta_keys( 'post', testimonials_post_type() );
 
 		$expected_meta_keys = array(
-			testimonials_video_url_meta_key()    => '_testimonials_video_url',
-			testimonials_student_name_meta_key() => '_testimonials_student_name',
-			testimonials_approved_at_meta_key()  => '_testimonials_approved_at',
-			testimonials_placement_meta_key()    => '_testimonials_placement',
+			testimonials_video_url_meta_key()     => '_testimonials_video_url',
+			testimonials_student_name_meta_key()  => '_testimonials_student_name',
+			testimonials_approved_at_meta_key()   => '_testimonials_approved_at',
+			testimonials_placement_meta_key()     => '_testimonials_placement',
+			testimonials_course_meta_key()        => '_testimonials_course',
+			testimonials_institution_meta_key()   => '_testimonials_institution',
+			testimonials_approval_year_meta_key() => '_testimonials_approval_year',
 		);
 
 		foreach ( $expected_meta_keys as $meta_key => $expected_meta_key ) {
@@ -51,6 +54,26 @@ final class ContentDomainTest extends WP_UnitTestCase {
 			$this->assertTrue( $registered_meta[ $meta_key ]['single'] );
 			$this->assertTrue( $registered_meta[ $meta_key ]['show_in_rest'] );
 		}
+
+		$private_meta_keys = array(
+			testimonials_evidence_reference_meta_key()          => '_testimonials_evidence_reference',
+			testimonials_verification_status_meta_key()          => '_testimonials_verification_status',
+			testimonials_publication_consent_status_meta_key()   => '_testimonials_publication_consent_status',
+		);
+
+		foreach ( $private_meta_keys as $meta_key => $expected_meta_key ) {
+			$this->assertSame( $expected_meta_key, $meta_key );
+			$this->assertArrayHasKey( $meta_key, $registered_meta );
+			$this->assertSame( 'string', $registered_meta[ $meta_key ]['type'] );
+			$this->assertTrue( $registered_meta[ $meta_key ]['single'] );
+			$this->assertFalse( $registered_meta[ $meta_key ]['show_in_rest'] );
+		}
+
+		$home_proof_meta_key = testimonials_home_proof_enabled_meta_key();
+		$this->assertSame( '_testimonials_home_proof_enabled', $home_proof_meta_key );
+		$this->assertArrayHasKey( $home_proof_meta_key, $registered_meta );
+		$this->assertSame( 'boolean', $registered_meta[ $home_proof_meta_key ]['type'] );
+		$this->assertFalse( $registered_meta[ $home_proof_meta_key ]['show_in_rest'] );
 	}
 
 	public function test_meta_box_renders_testimonial_fields(): void {
@@ -66,6 +89,13 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		update_post_meta( $post_id, testimonials_student_name_meta_key(), 'Maria Silva' );
 		update_post_meta( $post_id, testimonials_approved_at_meta_key(), 'Medicina USP' );
 		update_post_meta( $post_id, testimonials_placement_meta_key(), '1o lugar' );
+		update_post_meta( $post_id, testimonials_course_meta_key(), 'Medicina' );
+		update_post_meta( $post_id, testimonials_institution_meta_key(), 'USP' );
+		update_post_meta( $post_id, testimonials_approval_year_meta_key(), '2026' );
+		update_post_meta( $post_id, testimonials_evidence_reference_meta_key(), 'CRM-123' );
+		update_post_meta( $post_id, testimonials_verification_status_meta_key(), Testimonials_Content_Domain::VERIFICATION_VERIFIED );
+		update_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), Testimonials_Content_Domain::CONSENT_CONFIRMED );
+		update_post_meta( $post_id, testimonials_home_proof_enabled_meta_key(), true );
 
 		ob_start();
 		testimonials()->content_domain()->render_meta_box( get_post( $post_id ) );
@@ -80,6 +110,18 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'name="testimonials_video_url"', $output );
 		$this->assertStringContainsString( 'type="url"', $output );
 		$this->assertStringContainsString( 'value="https://www.youtube.com/watch?v=test123"', $output );
+		$this->assertStringContainsString( 'name="testimonials_course"', $output );
+		$this->assertStringContainsString( 'value="Medicina"', $output );
+		$this->assertStringContainsString( 'name="testimonials_institution"', $output );
+		$this->assertStringContainsString( 'value="USP"', $output );
+		$this->assertStringContainsString( 'name="testimonials_approval_year"', $output );
+		$this->assertStringContainsString( 'value="2026"', $output );
+		$this->assertStringContainsString( 'name="testimonials_evidence_reference"', $output );
+		$this->assertStringContainsString( 'value="CRM-123"', $output );
+		$this->assertStringContainsString( 'name="testimonials_verification_status"', $output );
+		$this->assertStringContainsString( 'name="testimonials_publication_consent_status"', $output );
+		$this->assertStringContainsString( 'name="testimonials_home_proof_enabled"', $output );
+		$this->assertStringContainsString( 'checked=', $output );
 	}
 
 	public function test_save_meta_box_updates_and_deletes_testimonial_fields(): void {
@@ -99,6 +141,13 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$_POST['testimonials_student_name']                       = 'Maria Silva';
 		$_POST['testimonials_approved_at']                        = 'Medicina USP';
 		$_POST['testimonials_placement']                          = '1o lugar';
+		$_POST['testimonials_course']                             = 'Medicina';
+		$_POST['testimonials_institution']                        = 'USP';
+		$_POST['testimonials_approval_year']                      = '2026';
+		$_POST['testimonials_evidence_reference']                 = 'Registro interno 123';
+		$_POST['testimonials_verification_status']                = Testimonials_Content_Domain::VERIFICATION_VERIFIED;
+		$_POST['testimonials_publication_consent_status']         = Testimonials_Content_Domain::CONSENT_CONFIRMED;
+		$_POST['testimonials_home_proof_enabled']                 = '1';
 
 		testimonials()->content_domain()->save_meta_box( $post_id );
 
@@ -106,11 +155,25 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertSame( 'Maria Silva', get_post_meta( $post_id, testimonials_student_name_meta_key(), true ) );
 		$this->assertSame( 'Medicina USP', get_post_meta( $post_id, testimonials_approved_at_meta_key(), true ) );
 		$this->assertSame( '1o lugar', get_post_meta( $post_id, testimonials_placement_meta_key(), true ) );
+		$this->assertSame( 'Medicina', get_post_meta( $post_id, testimonials_course_meta_key(), true ) );
+		$this->assertSame( 'USP', get_post_meta( $post_id, testimonials_institution_meta_key(), true ) );
+		$this->assertSame( '2026', get_post_meta( $post_id, testimonials_approval_year_meta_key(), true ) );
+		$this->assertSame( 'Registro interno 123', get_post_meta( $post_id, testimonials_evidence_reference_meta_key(), true ) );
+		$this->assertSame( Testimonials_Content_Domain::VERIFICATION_VERIFIED, get_post_meta( $post_id, testimonials_verification_status_meta_key(), true ) );
+		$this->assertSame( Testimonials_Content_Domain::CONSENT_CONFIRMED, get_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), true ) );
+		$this->assertSame( '1', get_post_meta( $post_id, testimonials_home_proof_enabled_meta_key(), true ) );
 
 		$_POST['testimonials_video_url']    = '';
 		$_POST['testimonials_student_name'] = '';
 		$_POST['testimonials_approved_at']  = '';
 		$_POST['testimonials_placement']    = '';
+		$_POST['testimonials_course']       = '';
+		$_POST['testimonials_institution']  = '';
+		$_POST['testimonials_approval_year'] = '';
+		$_POST['testimonials_evidence_reference'] = '';
+		$_POST['testimonials_verification_status'] = 'not-valid';
+		$_POST['testimonials_publication_consent_status'] = 'not-valid';
+		unset( $_POST['testimonials_home_proof_enabled'] );
 
 		testimonials()->content_domain()->save_meta_box( $post_id );
 
@@ -118,5 +181,54 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertSame( '', get_post_meta( $post_id, testimonials_student_name_meta_key(), true ) );
 		$this->assertSame( '', get_post_meta( $post_id, testimonials_approved_at_meta_key(), true ) );
 		$this->assertSame( '', get_post_meta( $post_id, testimonials_placement_meta_key(), true ) );
+		$this->assertSame( '', get_post_meta( $post_id, testimonials_course_meta_key(), true ) );
+		$this->assertSame( '', get_post_meta( $post_id, testimonials_institution_meta_key(), true ) );
+		$this->assertSame( '', get_post_meta( $post_id, testimonials_approval_year_meta_key(), true ) );
+		$this->assertSame( '', get_post_meta( $post_id, testimonials_evidence_reference_meta_key(), true ) );
+		$this->assertSame( Testimonials_Content_Domain::VERIFICATION_PENDING, get_post_meta( $post_id, testimonials_verification_status_meta_key(), true ) );
+		$this->assertSame( Testimonials_Content_Domain::CONSENT_UNKNOWN, get_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), true ) );
+		$this->assertSame( '', get_post_meta( $post_id, testimonials_home_proof_enabled_meta_key(), true ) );
+	}
+
+	public function test_home_proof_requires_verified_authorized_complete_published_record(): void {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_title'  => 'Verified student',
+				'post_status' => 'publish',
+				'post_type'   => testimonials_post_type(),
+			)
+		);
+		$attachment_id = self::factory()->attachment->create_object(
+			'image.jpg',
+			$post_id,
+			array( 'post_mime_type' => 'image/jpeg' )
+		);
+		set_post_thumbnail( $post_id, $attachment_id );
+
+		update_post_meta( $post_id, testimonials_student_name_meta_key(), 'Maria Silva' );
+		update_post_meta( $post_id, testimonials_course_meta_key(), 'Medicina' );
+		update_post_meta( $post_id, testimonials_institution_meta_key(), 'USP' );
+		update_post_meta( $post_id, testimonials_evidence_reference_meta_key(), 'Registro interno 123' );
+		update_post_meta( $post_id, testimonials_verification_status_meta_key(), Testimonials_Content_Domain::VERIFICATION_VERIFIED );
+		update_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), Testimonials_Content_Domain::CONSENT_CONFIRMED );
+		update_post_meta( $post_id, testimonials_home_proof_enabled_meta_key(), true );
+
+		$this->assertTrue( testimonials_is_home_proof_eligible( $post_id ) );
+
+		update_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), Testimonials_Content_Domain::CONSENT_REVOKED );
+		$this->assertFalse( testimonials_is_home_proof_eligible( $post_id ) );
+
+		update_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), Testimonials_Content_Domain::CONSENT_CONFIRMED );
+		delete_post_meta( $post_id, testimonials_evidence_reference_meta_key() );
+		$this->assertFalse( testimonials_is_home_proof_eligible( $post_id ) );
+	}
+
+	public function test_editorial_status_and_year_sanitizers_reject_invalid_values(): void {
+		$content_domain = testimonials()->content_domain();
+
+		$this->assertSame( '', $content_domain->sanitize_approval_year( '1899' ) );
+		$this->assertSame( '', $content_domain->sanitize_approval_year( 'invalid' ) );
+		$this->assertSame( Testimonials_Content_Domain::VERIFICATION_PENDING, $content_domain->sanitize_verification_status( 'invalid' ) );
+		$this->assertSame( Testimonials_Content_Domain::CONSENT_UNKNOWN, $content_domain->sanitize_publication_consent_status( 'invalid' ) );
 	}
 }
