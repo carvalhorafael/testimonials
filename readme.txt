@@ -4,7 +4,7 @@ Tags: custom-post-type, testimonials, content
 Requires at least: 6.4
 Tested up to: 6.5
 Requires PHP: 8.1
-Stable tag: 0.5.1
+Stable tag: 0.5.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,8 @@ The plugin registers:
 * `_testimonials_course` metadata for the student's course.
 * `_testimonials_institution` metadata for the approving institution.
 * `_testimonials_approval_year` metadata for the approval year.
+* `_testimonials_preparation_time` metadata for the student's preparation time.
+* `_testimonials_main_tip` metadata for the student's main approval tip.
 * Private editorial metadata for evidence, verification, publication consent and home proof selection.
 * `_testimonials_video_url` metadata for YouTube or other video URLs.
 * Rewrite rules for `/aprovados/` and `/aprovados/categoria/...`.
@@ -43,9 +45,13 @@ No. The active theme should provide templates and styling. This plugin owns the 
 
 = Which testimonial metadata does this plugin register? =
 
-It registers public editorial fields for the video URL, student name, approval summary, placement, course, institution and approval year. Evidence references, verification, consent and home proof selection remain private.
+It registers public editorial fields for the video URL, student name, approval summary, placement, course, institution, approval year, preparation time and main approval tip. Evidence references, verification, consent and home proof selection remain private.
 
 == Changelog ==
+
+= 0.5.2 =
+
+* Adds preparation time and a concise main approval tip as public testimonial metadata.
 
 = 0.5.1 =
 

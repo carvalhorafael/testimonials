@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2 - approval superpowers
+
+- Added preparation time and a concise main approval tip as public testimonial metadata.
+- Added both fields to the WordPress editor with sanitization and REST support.
+
 ## 0.5.1 - approved student permalinks
 
 - Changed the public testimonial path from `/depoimentos/` to `/aprovados/`.
