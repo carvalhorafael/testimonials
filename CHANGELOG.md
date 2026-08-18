@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 - approved student permalinks
+
+- Changed the public testimonial path from `/depoimentos/` to `/aprovados/`.
+- Added title-based slugs for newly created testimonials without migrating existing records.
+- Added a one-time rewrite rule refresh for the new public path.
+
 ## 0.5.0 - verifiable home proof
 
 - Added course, institution and approval year metadata for verifiable student records.

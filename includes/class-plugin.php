@@ -71,6 +71,11 @@ class Testimonials_Plugin {
 		$domain = new Testimonials_Content_Domain();
 		$domain->register_content_types();
 		flush_rewrite_rules();
+		update_option(
+			Testimonials_Content_Domain::REWRITE_RULES_VERSION_OPTION,
+			Testimonials_Content_Domain::REWRITE_RULES_VERSION,
+			false
+		);
 	}
 
 	public static function deactivate(): void {
