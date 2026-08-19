@@ -17,7 +17,8 @@ Testimonials is a WordPress plugin that owns a reusable testimonials content dom
 - Private editorial metadata for evidence, verification, publication consent and home proof selection
 - A WordPress admin meta box for testimonial details
 - A dynamic Gutenberg block: `testimonials/testimonials-display`
-- Rewrite rules for `/depoimentos/` and `/depoimentos/categoria/...`
+- Rewrite rules for `/aprovados/` and `/aprovados/categoria/...`
+- Title-based slugs for newly created testimonials, such as `/aprovados/nome-do-aluno/`
 - GitHub Releases update integration through the plugin `Update URI`
 
 ## What It Does Not Provide
@@ -62,6 +63,8 @@ testimonials_is_home_proof_eligible( $post_id );
 ```
 
 Approval year is optional. A record cannot become eligible for home proof without name, course, institution and an internal or public evidence reference. Revoking publication consent immediately makes it ineligible without deleting the testimonial.
+
+New testimonials derive their public slug from the post title when they are first created. Existing `post_name` values are intentionally preserved, including numeric slugs created by previous integrations.
 
 The reusable display block is registered by the plugin and rendered on the server:
 

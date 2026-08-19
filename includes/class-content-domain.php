@@ -12,7 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Testimonials_Content_Domain {
 	public const POST_TYPE                           = 'depoimento';
 	public const TAXONOMY                            = 'depoimento_categoria';
-	public const TESTIMONIALS_PATH                   = 'depoimentos';
+	public const TESTIMONIALS_PATH                   = 'aprovados';
+	public const REWRITE_RULES_VERSION               = 'aprovados-v1';
+	public const REWRITE_RULES_VERSION_OPTION        = 'testimonials_rewrite_rules_version';
 	public const VIDEO_URL_META_KEY                  = '_testimonials_video_url';
 	public const STUDENT_NAME_META_KEY               = '_testimonials_student_name';
 	public const APPROVED_AT_META_KEY                = '_testimonials_approved_at';
@@ -37,8 +39,59 @@ class Testimonials_Content_Domain {
 	public function register_hooks(): void {
 		add_action( 'init', array( $this, 'register_content_types' ) );
 		add_action( 'init', array( $this, 'register_meta' ), 11 );
+		add_action( 'init', array( $this, 'maybe_flush_rewrite_rules' ), 99 );
 		add_action( 'add_meta_boxes', array( $this, 'register_meta_box' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_meta_box' ) );
+		add_filter( 'wp_insert_post_data', array( $this, 'use_title_for_new_post_slug' ), 10, 4 );
+	}
+
+	/**
+	 * Regenerate rewrite rules once after the public testimonial path changes.
+	 */
+	public function maybe_flush_rewrite_rules(): void {
+		if ( self::REWRITE_RULES_VERSION === get_option( self::REWRITE_RULES_VERSION_OPTION ) ) {
+			return;
+		}
+
+		flush_rewrite_rules( false );
+		update_option( self::REWRITE_RULES_VERSION_OPTION, self::REWRITE_RULES_VERSION, false );
+	}
+
+	/**
+	 * Derive the slug for a new testimonial from its title.
+	 *
+	 * Existing records are intentionally left unchanged, including records with
+	 * numeric slugs created before this contract was introduced.
+	 *
+	 * @param array<string,mixed> $data                Sanitized post data.
+	 * @param array<string,mixed> $postarr             Processed post data.
+	 * @param array<string,mixed> $unsanitized_postarr Raw post data.
+	 * @param bool                $update              Whether this is an update.
+	 * @return array<string,mixed>
+	 */
+	public function use_title_for_new_post_slug( array $data, array $postarr, array $unsanitized_postarr, bool $update ): array {
+		unset( $postarr, $unsanitized_postarr );
+
+		if ( $update || self::POST_TYPE !== ( $data['post_type'] ?? '' ) ) {
+			return $data;
+		}
+
+		$title = isset( $data['post_title'] ) && is_string( $data['post_title'] ) ? $data['post_title'] : '';
+		$slug  = sanitize_title( $title );
+
+		if ( '' === $slug ) {
+			return $data;
+		}
+
+		$data['post_name'] = wp_unique_post_slug(
+			$slug,
+			0,
+			isset( $data['post_status'] ) && is_string( $data['post_status'] ) ? $data['post_status'] : 'draft',
+			self::POST_TYPE,
+			isset( $data['post_parent'] ) ? (int) $data['post_parent'] : 0
+		);
+
+		return $data;
 	}
 
 	public function register_content_types(): void {

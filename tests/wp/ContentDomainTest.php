@@ -14,7 +14,7 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertTrue( $post_type->public );
 		$this->assertFalse( $post_type->has_archive );
 		$this->assertTrue( $post_type->show_in_rest );
-		$this->assertSame( 'depoimentos', $post_type->rewrite['slug'] );
+		$this->assertSame( 'aprovados', $post_type->rewrite['slug'] );
 		$this->assertTrue( post_type_supports( testimonials_post_type(), 'title' ) );
 		$this->assertTrue( post_type_supports( testimonials_post_type(), 'editor' ) );
 		$this->assertTrue( post_type_supports( testimonials_post_type(), 'thumbnail' ) );
@@ -29,7 +29,81 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertTrue( $taxonomy->hierarchical );
 		$this->assertTrue( $taxonomy->show_in_rest );
 		$this->assertContains( testimonials_post_type(), $taxonomy->object_type );
-		$this->assertSame( 'depoimentos/categoria', $taxonomy->rewrite['slug'] );
+		$this->assertSame( 'aprovados/categoria', $taxonomy->rewrite['slug'] );
+	}
+
+	public function test_new_testimonial_slug_is_derived_from_title(): void {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_name'   => '1422',
+				'post_status' => 'publish',
+				'post_title'  => 'Karine Mariane Lopes Martins',
+				'post_type'   => testimonials_post_type(),
+			)
+		);
+
+		$this->assertSame( 'karine-mariane-lopes-martins', get_post_field( 'post_name', $post_id ) );
+	}
+
+	public function test_new_testimonial_title_slugs_remain_unique(): void {
+		$first_post_id = self::factory()->post->create(
+			array(
+				'post_status' => 'publish',
+				'post_title'  => 'Maria Silva',
+				'post_type'   => testimonials_post_type(),
+			)
+		);
+		$second_post_id = self::factory()->post->create(
+			array(
+				'post_status' => 'publish',
+				'post_title'  => 'Maria Silva',
+				'post_type'   => testimonials_post_type(),
+			)
+		);
+
+		$this->assertSame( 'maria-silva', get_post_field( 'post_name', $first_post_id ) );
+		$this->assertSame( 'maria-silva-2', get_post_field( 'post_name', $second_post_id ) );
+	}
+
+	public function test_existing_numeric_testimonial_slug_is_not_migrated_on_update(): void {
+		global $wpdb;
+
+		$post_id = self::factory()->post->create(
+			array(
+				'post_status' => 'publish',
+				'post_title'  => 'Existing testimonial',
+				'post_type'   => testimonials_post_type(),
+			)
+		);
+
+		$wpdb->update(
+			$wpdb->posts,
+			array( 'post_name' => '1422' ),
+			array( 'ID' => $post_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+		clean_post_cache( $post_id );
+
+		wp_update_post(
+			array(
+				'ID'         => $post_id,
+				'post_title' => 'Karine Mariane Lopes Martins',
+			)
+		);
+
+		$this->assertSame( '1422', get_post_field( 'post_name', $post_id ) );
+	}
+
+	public function test_rewrite_rules_are_marked_current_after_path_upgrade(): void {
+		delete_option( Testimonials_Content_Domain::REWRITE_RULES_VERSION_OPTION );
+
+		testimonials()->content_domain()->maybe_flush_rewrite_rules();
+
+		$this->assertSame(
+			Testimonials_Content_Domain::REWRITE_RULES_VERSION,
+			get_option( Testimonials_Content_Domain::REWRITE_RULES_VERSION_OPTION )
+		);
 	}
 
 	public function test_testimonial_metadata_is_registered(): void {
