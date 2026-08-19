@@ -116,9 +116,11 @@ final class ContentDomainTest extends WP_UnitTestCase {
 			testimonials_student_name_meta_key()  => '_testimonials_student_name',
 			testimonials_approved_at_meta_key()   => '_testimonials_approved_at',
 			testimonials_placement_meta_key()     => '_testimonials_placement',
-			testimonials_course_meta_key()        => '_testimonials_course',
-			testimonials_institution_meta_key()   => '_testimonials_institution',
-			testimonials_approval_year_meta_key() => '_testimonials_approval_year',
+			testimonials_course_meta_key()            => '_testimonials_course',
+			testimonials_institution_meta_key()       => '_testimonials_institution',
+			testimonials_approval_year_meta_key()     => '_testimonials_approval_year',
+			testimonials_preparation_time_meta_key() => '_testimonials_preparation_time',
+			testimonials_main_tip_meta_key()          => '_testimonials_main_tip',
 		);
 
 		foreach ( $expected_meta_keys as $meta_key => $expected_meta_key ) {
@@ -166,6 +168,8 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		update_post_meta( $post_id, testimonials_course_meta_key(), 'Medicina' );
 		update_post_meta( $post_id, testimonials_institution_meta_key(), 'USP' );
 		update_post_meta( $post_id, testimonials_approval_year_meta_key(), '2026' );
+		update_post_meta( $post_id, testimonials_preparation_time_meta_key(), '8 meses' );
+		update_post_meta( $post_id, testimonials_main_tip_meta_key(), 'Revise cada erro do simulado.' );
 		update_post_meta( $post_id, testimonials_evidence_reference_meta_key(), 'CRM-123' );
 		update_post_meta( $post_id, testimonials_verification_status_meta_key(), Testimonials_Content_Domain::VERIFICATION_VERIFIED );
 		update_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), Testimonials_Content_Domain::CONSENT_CONFIRMED );
@@ -190,6 +194,10 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'value="USP"', $output );
 		$this->assertStringContainsString( 'name="testimonials_approval_year"', $output );
 		$this->assertStringContainsString( 'value="2026"', $output );
+		$this->assertStringContainsString( 'name="testimonials_preparation_time"', $output );
+		$this->assertStringContainsString( 'value="8 meses"', $output );
+		$this->assertStringContainsString( 'name="testimonials_main_tip"', $output );
+		$this->assertStringContainsString( 'Revise cada erro do simulado.', $output );
 		$this->assertStringContainsString( 'name="testimonials_evidence_reference"', $output );
 		$this->assertStringContainsString( 'value="CRM-123"', $output );
 		$this->assertStringContainsString( 'name="testimonials_verification_status"', $output );
@@ -218,6 +226,8 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$_POST['testimonials_course']                             = 'Medicina';
 		$_POST['testimonials_institution']                        = 'USP';
 		$_POST['testimonials_approval_year']                      = '2026';
+		$_POST['testimonials_preparation_time']                   = '8 meses';
+		$_POST['testimonials_main_tip']                           = 'Revise cada erro do simulado.';
 		$_POST['testimonials_evidence_reference']                 = 'Registro interno 123';
 		$_POST['testimonials_verification_status']                = Testimonials_Content_Domain::VERIFICATION_VERIFIED;
 		$_POST['testimonials_publication_consent_status']         = Testimonials_Content_Domain::CONSENT_CONFIRMED;
@@ -232,6 +242,8 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertSame( 'Medicina', get_post_meta( $post_id, testimonials_course_meta_key(), true ) );
 		$this->assertSame( 'USP', get_post_meta( $post_id, testimonials_institution_meta_key(), true ) );
 		$this->assertSame( '2026', get_post_meta( $post_id, testimonials_approval_year_meta_key(), true ) );
+		$this->assertSame( '8 meses', get_post_meta( $post_id, testimonials_preparation_time_meta_key(), true ) );
+		$this->assertSame( 'Revise cada erro do simulado.', get_post_meta( $post_id, testimonials_main_tip_meta_key(), true ) );
 		$this->assertSame( 'Registro interno 123', get_post_meta( $post_id, testimonials_evidence_reference_meta_key(), true ) );
 		$this->assertSame( Testimonials_Content_Domain::VERIFICATION_VERIFIED, get_post_meta( $post_id, testimonials_verification_status_meta_key(), true ) );
 		$this->assertSame( Testimonials_Content_Domain::CONSENT_CONFIRMED, get_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), true ) );
@@ -241,9 +253,11 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$_POST['testimonials_student_name'] = '';
 		$_POST['testimonials_approved_at']  = '';
 		$_POST['testimonials_placement']    = '';
-		$_POST['testimonials_course']       = '';
-		$_POST['testimonials_institution']  = '';
-		$_POST['testimonials_approval_year'] = '';
+		$_POST['testimonials_course']           = '';
+		$_POST['testimonials_institution']      = '';
+		$_POST['testimonials_approval_year']    = '';
+		$_POST['testimonials_preparation_time'] = '';
+		$_POST['testimonials_main_tip']         = '';
 		$_POST['testimonials_evidence_reference'] = '';
 		$_POST['testimonials_verification_status'] = 'not-valid';
 		$_POST['testimonials_publication_consent_status'] = 'not-valid';
@@ -258,6 +272,8 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertSame( '', get_post_meta( $post_id, testimonials_course_meta_key(), true ) );
 		$this->assertSame( '', get_post_meta( $post_id, testimonials_institution_meta_key(), true ) );
 		$this->assertSame( '', get_post_meta( $post_id, testimonials_approval_year_meta_key(), true ) );
+		$this->assertSame( '', get_post_meta( $post_id, testimonials_preparation_time_meta_key(), true ) );
+		$this->assertSame( '', get_post_meta( $post_id, testimonials_main_tip_meta_key(), true ) );
 		$this->assertSame( '', get_post_meta( $post_id, testimonials_evidence_reference_meta_key(), true ) );
 		$this->assertSame( Testimonials_Content_Domain::VERIFICATION_PENDING, get_post_meta( $post_id, testimonials_verification_status_meta_key(), true ) );
 		$this->assertSame( Testimonials_Content_Domain::CONSENT_UNKNOWN, get_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), true ) );
@@ -304,5 +320,14 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertSame( '', $content_domain->sanitize_approval_year( 'invalid' ) );
 		$this->assertSame( Testimonials_Content_Domain::VERIFICATION_PENDING, $content_domain->sanitize_verification_status( 'invalid' ) );
 		$this->assertSame( Testimonials_Content_Domain::CONSENT_UNKNOWN, $content_domain->sanitize_publication_consent_status( 'invalid' ) );
+	}
+
+	public function test_main_tip_sanitizer_removes_markup_and_limits_length(): void {
+		$content_domain = testimonials()->content_domain();
+		$long_tip       = '<strong>' . str_repeat( 'a', Testimonials_Content_Domain::MAIN_TIP_MAX_LENGTH + 20 ) . '</strong>';
+		$sanitized_tip  = $content_domain->sanitize_main_tip( $long_tip );
+
+		$this->assertStringNotContainsString( '<strong>', $sanitized_tip );
+		$this->assertSame( Testimonials_Content_Domain::MAIN_TIP_MAX_LENGTH, strlen( $sanitized_tip ) );
 	}
 }
