@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Testimonials
  * Description: Registers the reusable Testimonials content domain for WordPress sites.
- * Version: 0.5.0
+ * Version: 0.5.2
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author: Rafael Carvalho
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TESTIMONIALS_VERSION', '0.5.0' );
+define( 'TESTIMONIALS_VERSION', '0.5.2' );
 define( 'TESTIMONIALS_FILE', __FILE__ );
 define( 'TESTIMONIALS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TESTIMONIALS_BASENAME', plugin_basename( __FILE__ ) );
@@ -98,6 +98,20 @@ function testimonials_institution_meta_key(): string {
  */
 function testimonials_approval_year_meta_key(): string {
 	return Testimonials_Content_Domain::APPROVAL_YEAR_META_KEY;
+}
+
+/**
+ * Returns the canonical testimonial preparation time meta key.
+ */
+function testimonials_preparation_time_meta_key(): string {
+	return Testimonials_Content_Domain::PREPARATION_TIME_META_KEY;
+}
+
+/**
+ * Returns the canonical testimonial main tip meta key.
+ */
+function testimonials_main_tip_meta_key(): string {
+	return Testimonials_Content_Domain::MAIN_TIP_META_KEY;
 }
 
 /**

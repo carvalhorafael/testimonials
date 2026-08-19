@@ -12,7 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Testimonials_Content_Domain {
 	public const POST_TYPE                           = 'depoimento';
 	public const TAXONOMY                            = 'depoimento_categoria';
-	public const TESTIMONIALS_PATH                   = 'depoimentos';
+	public const TESTIMONIALS_PATH                   = 'aprovados';
+	public const REWRITE_RULES_VERSION               = 'aprovados-v1';
+	public const REWRITE_RULES_VERSION_OPTION        = 'testimonials_rewrite_rules_version';
 	public const VIDEO_URL_META_KEY                  = '_testimonials_video_url';
 	public const STUDENT_NAME_META_KEY               = '_testimonials_student_name';
 	public const APPROVED_AT_META_KEY                = '_testimonials_approved_at';
@@ -20,6 +22,9 @@ class Testimonials_Content_Domain {
 	public const COURSE_META_KEY                     = '_testimonials_course';
 	public const INSTITUTION_META_KEY                = '_testimonials_institution';
 	public const APPROVAL_YEAR_META_KEY              = '_testimonials_approval_year';
+	public const PREPARATION_TIME_META_KEY           = '_testimonials_preparation_time';
+	public const MAIN_TIP_META_KEY                   = '_testimonials_main_tip';
+	public const MAIN_TIP_MAX_LENGTH                 = 160;
 	public const EVIDENCE_REFERENCE_META_KEY         = '_testimonials_evidence_reference';
 	public const VERIFICATION_STATUS_META_KEY        = '_testimonials_verification_status';
 	public const PUBLICATION_CONSENT_STATUS_META_KEY = '_testimonials_publication_consent_status';
@@ -37,8 +42,59 @@ class Testimonials_Content_Domain {
 	public function register_hooks(): void {
 		add_action( 'init', array( $this, 'register_content_types' ) );
 		add_action( 'init', array( $this, 'register_meta' ), 11 );
+		add_action( 'init', array( $this, 'maybe_flush_rewrite_rules' ), 99 );
 		add_action( 'add_meta_boxes', array( $this, 'register_meta_box' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_meta_box' ) );
+		add_filter( 'wp_insert_post_data', array( $this, 'use_title_for_new_post_slug' ), 10, 4 );
+	}
+
+	/**
+	 * Regenerate rewrite rules once after the public testimonial path changes.
+	 */
+	public function maybe_flush_rewrite_rules(): void {
+		if ( self::REWRITE_RULES_VERSION === get_option( self::REWRITE_RULES_VERSION_OPTION ) ) {
+			return;
+		}
+
+		flush_rewrite_rules( false );
+		update_option( self::REWRITE_RULES_VERSION_OPTION, self::REWRITE_RULES_VERSION, false );
+	}
+
+	/**
+	 * Derive the slug for a new testimonial from its title.
+	 *
+	 * Existing records are intentionally left unchanged, including records with
+	 * numeric slugs created before this contract was introduced.
+	 *
+	 * @param array<string,mixed> $data                Sanitized post data.
+	 * @param array<string,mixed> $postarr             Processed post data.
+	 * @param array<string,mixed> $unsanitized_postarr Raw post data.
+	 * @param bool                $update              Whether this is an update.
+	 * @return array<string,mixed>
+	 */
+	public function use_title_for_new_post_slug( array $data, array $postarr, array $unsanitized_postarr, bool $update ): array {
+		unset( $postarr, $unsanitized_postarr );
+
+		if ( $update || self::POST_TYPE !== ( $data['post_type'] ?? '' ) ) {
+			return $data;
+		}
+
+		$title = isset( $data['post_title'] ) && is_string( $data['post_title'] ) ? $data['post_title'] : '';
+		$slug  = sanitize_title( $title );
+
+		if ( '' === $slug ) {
+			return $data;
+		}
+
+		$data['post_name'] = wp_unique_post_slug(
+			$slug,
+			0,
+			isset( $data['post_status'] ) && is_string( $data['post_status'] ) ? $data['post_status'] : 'draft',
+			self::POST_TYPE,
+			isset( $data['post_parent'] ) ? (int) $data['post_parent'] : 0
+		);
+
+		return $data;
 	}
 
 	public function register_content_types(): void {
@@ -94,6 +150,8 @@ class Testimonials_Content_Domain {
 		$this->register_string_meta( self::COURSE_META_KEY, 'sanitize_text_field' );
 		$this->register_string_meta( self::INSTITUTION_META_KEY, 'sanitize_text_field' );
 		$this->register_string_meta( self::APPROVAL_YEAR_META_KEY, array( $this, 'sanitize_approval_year' ) );
+		$this->register_string_meta( self::PREPARATION_TIME_META_KEY, 'sanitize_text_field' );
+		$this->register_string_meta( self::MAIN_TIP_META_KEY, array( $this, 'sanitize_main_tip' ) );
 		$this->register_string_meta( self::EVIDENCE_REFERENCE_META_KEY, 'sanitize_text_field', false );
 		$this->register_string_meta( self::VERIFICATION_STATUS_META_KEY, array( $this, 'sanitize_verification_status' ), false );
 		$this->register_string_meta( self::PUBLICATION_CONSENT_STATUS_META_KEY, array( $this, 'sanitize_publication_consent_status' ), false );
@@ -119,6 +177,8 @@ class Testimonials_Content_Domain {
 		$course                    = get_post_meta( $post->ID, self::COURSE_META_KEY, true );
 		$institution               = get_post_meta( $post->ID, self::INSTITUTION_META_KEY, true );
 		$approval_year             = get_post_meta( $post->ID, self::APPROVAL_YEAR_META_KEY, true );
+		$preparation_time          = get_post_meta( $post->ID, self::PREPARATION_TIME_META_KEY, true );
+		$main_tip                  = get_post_meta( $post->ID, self::MAIN_TIP_META_KEY, true );
 		$evidence_reference        = get_post_meta( $post->ID, self::EVIDENCE_REFERENCE_META_KEY, true );
 		$verification_status       = get_post_meta( $post->ID, self::VERIFICATION_STATUS_META_KEY, true );
 		$publication_consent_status = get_post_meta( $post->ID, self::PUBLICATION_CONSENT_STATUS_META_KEY, true );
@@ -190,6 +250,29 @@ class Testimonials_Content_Domain {
 				type="number"
 				value="<?php echo esc_attr( $approval_year ); ?>"
 			>
+		</p>
+		<p>
+			<label for="testimonials-preparation-time"><?php esc_html_e( 'Tempo de preparação', 'testimonials' ); ?></label>
+			<input
+				class="widefat"
+				id="testimonials-preparation-time"
+				maxlength="80"
+				name="testimonials_preparation_time"
+				type="text"
+				value="<?php echo esc_attr( $preparation_time ); ?>"
+			>
+			<small><?php esc_html_e( 'Exemplo: 8 meses ou desde o 2º ano.', 'testimonials' ); ?></small>
+		</p>
+		<p>
+			<label for="testimonials-main-tip"><?php esc_html_e( 'Principal dica do aprovado', 'testimonials' ); ?></label>
+			<textarea
+				class="widefat"
+				id="testimonials-main-tip"
+				maxlength="<?php echo esc_attr( (string) self::MAIN_TIP_MAX_LENGTH ); ?>"
+				name="testimonials_main_tip"
+				rows="4"
+			><?php echo esc_textarea( $main_tip ); ?></textarea>
+			<small><?php esc_html_e( 'Uma dica curta para o bloco “Meu superpoder”.', 'testimonials' ); ?></small>
 		</p>
 		<p>
 			<label for="testimonials-video-url"><?php esc_html_e( 'Video URL', 'testimonials' ); ?></label>
@@ -267,6 +350,8 @@ class Testimonials_Content_Domain {
 		$this->save_text_meta( $post_id, 'testimonials_course', self::COURSE_META_KEY );
 		$this->save_text_meta( $post_id, 'testimonials_institution', self::INSTITUTION_META_KEY );
 		$this->save_approval_year_meta( $post_id );
+		$this->save_text_meta( $post_id, 'testimonials_preparation_time', self::PREPARATION_TIME_META_KEY );
+		$this->save_main_tip_meta( $post_id );
 		$this->save_text_meta( $post_id, 'testimonials_evidence_reference', self::EVIDENCE_REFERENCE_META_KEY );
 		$this->save_choice_meta( $post_id, 'testimonials_verification_status', self::VERIFICATION_STATUS_META_KEY, array( $this, 'sanitize_verification_status' ) );
 		$this->save_choice_meta( $post_id, 'testimonials_publication_consent_status', self::PUBLICATION_CONSENT_STATUS_META_KEY, array( $this, 'sanitize_publication_consent_status' ) );
@@ -343,6 +428,17 @@ class Testimonials_Content_Domain {
 		update_post_meta( $post_id, self::APPROVAL_YEAR_META_KEY, $value );
 	}
 
+	private function save_main_tip_meta( int $post_id ): void {
+		$value = $this->sanitize_main_tip( $this->posted_scalar_value( 'testimonials_main_tip' ) );
+
+		if ( '' === $value ) {
+			delete_post_meta( $post_id, self::MAIN_TIP_META_KEY );
+			return;
+		}
+
+		update_post_meta( $post_id, self::MAIN_TIP_META_KEY, $value );
+	}
+
 	private function save_choice_meta( int $post_id, string $post_key, string $meta_key, callable $sanitize_callback ): void {
 		$value = (string) call_user_func( $sanitize_callback, $this->posted_scalar_value( $post_key ) );
 
@@ -374,6 +470,16 @@ class Testimonials_Content_Domain {
 		$year_number = (int) $year;
 
 		return $year_number >= 1900 && $year_number <= $current_year + 1 ? (string) $year_number : '';
+	}
+
+	public function sanitize_main_tip( mixed $value ): string {
+		$value = is_scalar( $value ) ? sanitize_textarea_field( (string) $value ) : '';
+
+		if ( function_exists( 'mb_substr' ) ) {
+			return mb_substr( $value, 0, self::MAIN_TIP_MAX_LENGTH );
+		}
+
+		return substr( $value, 0, self::MAIN_TIP_MAX_LENGTH );
 	}
 
 	public function sanitize_verification_status( mixed $value ): string {
