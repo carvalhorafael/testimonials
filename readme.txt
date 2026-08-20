@@ -4,7 +4,7 @@ Tags: custom-post-type, testimonials, content
 Requires at least: 6.4
 Tested up to: 6.5
 Requires PHP: 8.1
-Stable tag: 0.5.4
+Stable tag: 0.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,6 +28,8 @@ The plugin registers:
 * `_testimonials_main_tip` metadata for the student's main approval tip.
 * Private editorial metadata for evidence, verification, publication consent, home proof and featured story selection.
 * `_testimonials_video_url` metadata for YouTube or other video URLs.
+* A reusable CSV importer with validation, duplicate protection, image sideloading and per-row reports.
+* Automatic publication for eligible imports and a direct bulk publish action for existing drafts.
 * Rewrite rules for `/aprovados/` and `/aprovados/categoria/...`.
 * Title-based slugs for newly created testimonials, such as `/aprovados/nome-do-aluno/`.
 
@@ -48,6 +50,13 @@ No. The active theme should provide templates and styling. This plugin owns the 
 It registers public editorial fields for the video URL, student name, approval summary, placement, course, institution, approval year, preparation time and main approval tip. Evidence references, verification, consent, home proof and featured story selection remain private.
 
 == Changelog ==
+
+= 0.6.0 =
+
+* Adds a reusable CSV import workflow with validation, preview and per-row reports.
+* Imports compatible external images into the media library and applies eligible editorial selections.
+* Prevents duplicates through stable external IDs and records private import audit metadata.
+* Adds automatic publication for eligible imports and a direct bulk publish action for drafts.
 
 = 0.5.4 =
 
