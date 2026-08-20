@@ -32,6 +32,35 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertSame( 'aprovados/categoria', $taxonomy->rewrite['slug'] );
 	}
 
+	public function test_direct_publish_bulk_action_is_available(): void {
+		$actions = testimonials()->content_domain()->register_bulk_actions( array( 'edit' => 'Editar' ) );
+
+		$this->assertArrayHasKey( 'testimonials_publish', $actions );
+		$this->assertSame( 'Publicar depoimentos', $actions['testimonials_publish'] );
+	}
+
+	public function test_direct_publish_bulk_action_publishes_selected_drafts(): void {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+		$post_ids = self::factory()->post->create_many(
+			2,
+			array(
+				'post_status' => 'draft',
+				'post_type'   => testimonials_post_type(),
+			)
+		);
+
+		$redirect_url = testimonials()->content_domain()->handle_bulk_actions(
+			'edit.php?post_type=' . testimonials_post_type(),
+			'testimonials_publish',
+			$post_ids
+		);
+
+		$this->assertSame( 'publish', get_post_status( $post_ids[0] ) );
+		$this->assertSame( 'publish', get_post_status( $post_ids[1] ) );
+		$this->assertStringContainsString( 'testimonials_bulk_published=2', $redirect_url );
+	}
+
 	public function test_new_testimonial_slug_is_derived_from_title(): void {
 		$post_id = self::factory()->post->create(
 			array(

@@ -49,6 +49,71 @@ class Testimonials_Content_Domain {
 		add_action( 'add_meta_boxes', array( $this, 'register_meta_box' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_meta_box' ) );
 		add_filter( 'wp_insert_post_data', array( $this, 'use_title_for_new_post_slug' ), 10, 4 );
+		add_filter( 'bulk_actions-edit-' . self::POST_TYPE, array( $this, 'register_bulk_actions' ) );
+		add_filter( 'handle_bulk_actions-edit-' . self::POST_TYPE, array( $this, 'handle_bulk_actions' ), 10, 3 );
+		add_action( 'admin_notices', array( $this, 'render_bulk_action_notice' ) );
+	}
+
+	/**
+	 * @param array<string,string> $actions Available bulk actions.
+	 * @return array<string,string>
+	 */
+	public function register_bulk_actions( array $actions ): array {
+		$actions['testimonials_publish'] = __( 'Publicar depoimentos', 'testimonials' );
+
+		return $actions;
+	}
+
+	/**
+	 * @param int[] $post_ids Selected post IDs.
+	 */
+	public function handle_bulk_actions( string $redirect_url, string $action, array $post_ids ): string {
+		if ( 'testimonials_publish' !== $action ) {
+			return $redirect_url;
+		}
+
+		$published = 0;
+		foreach ( array_unique( array_map( 'absint', $post_ids ) ) as $post_id ) {
+			if ( self::POST_TYPE !== get_post_type( $post_id ) || ! current_user_can( 'publish_post', $post_id ) ) {
+				continue;
+			}
+
+			$result = wp_update_post(
+				array(
+					'ID'          => $post_id,
+					'post_status' => 'publish',
+				),
+				true
+			);
+
+			if ( ! is_wp_error( $result ) ) {
+				++$published;
+			}
+		}
+
+		return add_query_arg( 'testimonials_bulk_published', $published, $redirect_url );
+	}
+
+	public function render_bulk_action_notice(): void {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || 'edit-' . self::POST_TYPE !== $screen->id || ! isset( $_GET['testimonials_bulk_published'] ) ) {
+			return;
+		}
+
+		$published = absint( wp_unslash( $_GET['testimonials_bulk_published'] ) );
+		?>
+		<div class="notice notice-success is-dismissible">
+			<p>
+				<?php
+				printf(
+					/* translators: %d: number of published testimonials. */
+					esc_html( _n( '%d depoimento foi publicado.', '%d depoimentos foram publicados.', $published, 'testimonials' ) ),
+					(int) $published
+				);
+				?>
+			</p>
+		</div>
+		<?php
 	}
 
 	/**
@@ -485,7 +550,11 @@ class Testimonials_Content_Domain {
 	}
 
 	private function save_featured_story_meta( int $post_id ): void {
-		if ( '1' !== $this->posted_scalar_value( 'testimonials_featured_story' ) ) {
+		$this->set_featured_story_selection( $post_id, '1' === $this->posted_scalar_value( 'testimonials_featured_story' ) );
+	}
+
+	public function set_featured_story_selection( int $post_id, bool $selected ): void {
+		if ( ! $selected ) {
 			delete_post_meta( $post_id, self::FEATURED_STORY_META_KEY );
 			return;
 		}
@@ -510,7 +579,11 @@ class Testimonials_Content_Domain {
 	}
 
 	private function save_hero_selection_meta( int $post_id ): void {
-		if ( '1' !== $this->posted_scalar_value( 'testimonials_hero_enabled' ) ) {
+		$this->set_hero_selection( $post_id, '1' === $this->posted_scalar_value( 'testimonials_hero_enabled' ) );
+	}
+
+	public function set_hero_selection( int $post_id, bool $selected ): void {
+		if ( ! $selected ) {
 			delete_post_meta( $post_id, self::HERO_ENABLED_META_KEY );
 			return;
 		}
