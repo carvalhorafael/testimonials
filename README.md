@@ -59,6 +59,7 @@ testimonials_verification_status_meta_key();
 testimonials_publication_consent_status_meta_key();
 testimonials_home_proof_enabled_meta_key();
 testimonials_featured_story_meta_key();
+testimonials_hero_enabled_meta_key();
 ```
 
 A theme can check whether a published record has all required public data, a featured image, an evidence reference, verified facts, confirmed publication consent and explicit home selection:
@@ -67,11 +68,15 @@ A theme can check whether a published record has all required public data, a fea
 testimonials_is_home_proof_eligible( $post_id );
 testimonials_is_featured_story_eligible( $post_id );
 testimonials_get_featured_story(); // WP_Post|null
+testimonials_is_hero_eligible( $post_id );
+testimonials_get_hero_testimonials(); // WP_Post[], maximum of three
 ```
 
 Approval year is optional. A record cannot become eligible for home proof without name, course, institution and an internal or public evidence reference. Revoking publication consent immediately makes it ineligible without deleting the testimonial.
 
 The featured story is a single editorial selection. Saving a new selection replaces the previous one. The plugin only returns it when the testimonial is published, has a featured image, a written testimonial, complete approval data, verified evidence and confirmed publication consent.
+
+The approved students hero accepts up to three editorial selections. Selecting a fourth testimonial removes the oldest selection. The helper only returns published records with a featured image, complete approval data, verified evidence and confirmed publication consent.
 
 New testimonials derive their public slug from the post title when they are first created. Existing `post_name` values are intentionally preserved, including numeric slugs created by previous integrations.
 

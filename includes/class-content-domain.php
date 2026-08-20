@@ -30,6 +30,8 @@ class Testimonials_Content_Domain {
 	public const PUBLICATION_CONSENT_STATUS_META_KEY = '_testimonials_publication_consent_status';
 	public const HOME_PROOF_ENABLED_META_KEY         = '_testimonials_home_proof_enabled';
 	public const FEATURED_STORY_META_KEY             = '_testimonials_featured_story';
+	public const HERO_ENABLED_META_KEY               = '_testimonials_hero_enabled';
+	public const HERO_MAX_TESTIMONIALS               = 3;
 	public const VERIFICATION_PENDING                = 'pending';
 	public const VERIFICATION_VERIFIED               = 'verified';
 	public const VERIFICATION_REJECTED               = 'rejected';
@@ -158,6 +160,7 @@ class Testimonials_Content_Domain {
 		$this->register_string_meta( self::PUBLICATION_CONSENT_STATUS_META_KEY, array( $this, 'sanitize_publication_consent_status' ), false );
 		$this->register_boolean_meta( self::HOME_PROOF_ENABLED_META_KEY );
 		$this->register_boolean_meta( self::FEATURED_STORY_META_KEY );
+		$this->register_boolean_meta( self::HERO_ENABLED_META_KEY );
 	}
 
 	public function register_meta_box(): void {
@@ -186,6 +189,7 @@ class Testimonials_Content_Domain {
 		$publication_consent_status = get_post_meta( $post->ID, self::PUBLICATION_CONSENT_STATUS_META_KEY, true );
 		$home_proof_enabled        = (bool) get_post_meta( $post->ID, self::HOME_PROOF_ENABLED_META_KEY, true );
 		$featured_story_enabled    = (bool) get_post_meta( $post->ID, self::FEATURED_STORY_META_KEY, true );
+		$hero_enabled              = (bool) get_post_meta( $post->ID, self::HERO_ENABLED_META_KEY, true );
 
 		$verification_status        = $verification_status ? $verification_status : self::VERIFICATION_PENDING;
 		$publication_consent_status = $publication_consent_status ? $publication_consent_status : self::CONSENT_UNKNOWN;
@@ -332,6 +336,14 @@ class Testimonials_Content_Domain {
 			<br>
 			<small><?php esc_html_e( 'Somente um depoimento pode ocupar o destaque. Ao salvar, esta seleção substitui a anterior e só é exibida quando o registro está completo, verificado e autorizado.', 'testimonials' ); ?></small>
 		</p>
+		<p>
+			<label>
+				<input name="testimonials_hero_enabled" type="checkbox" value="1"<?php checked( $hero_enabled ); ?>>
+				<?php esc_html_e( 'Exibir na hero do mural de aprovados', 'testimonials' ); ?>
+			</label>
+			<br>
+			<small><?php esc_html_e( 'A hero usa até três depoimentos. Ao selecionar um quarto, o depoimento selecionado há mais tempo é removido. Apenas registros completos, verificados e autorizados são exibidos.', 'testimonials' ); ?></small>
+		</p>
 		<?php
 	}
 
@@ -368,6 +380,7 @@ class Testimonials_Content_Domain {
 		$this->save_choice_meta( $post_id, 'testimonials_publication_consent_status', self::PUBLICATION_CONSENT_STATUS_META_KEY, array( $this, 'sanitize_publication_consent_status' ) );
 		$this->save_boolean_meta( $post_id, 'testimonials_home_proof_enabled', self::HOME_PROOF_ENABLED_META_KEY );
 		$this->save_featured_story_meta( $post_id );
+		$this->save_hero_selection_meta( $post_id );
 	}
 
 	/**
@@ -496,6 +509,35 @@ class Testimonials_Content_Domain {
 		update_post_meta( $post_id, self::FEATURED_STORY_META_KEY, true );
 	}
 
+	private function save_hero_selection_meta( int $post_id ): void {
+		if ( '1' !== $this->posted_scalar_value( 'testimonials_hero_enabled' ) ) {
+			delete_post_meta( $post_id, self::HERO_ENABLED_META_KEY );
+			return;
+		}
+
+		$previous_hero_ids = get_posts(
+			array(
+				'fields'         => 'ids',
+				'meta_key'       => self::HERO_ENABLED_META_KEY,
+				'meta_value'     => '1',
+				'order'          => 'DESC',
+				'orderby'        => 'modified',
+				'post__not_in'   => array( $post_id ),
+				'post_status'    => 'any',
+				'post_type'      => self::POST_TYPE,
+				'posts_per_page' => -1,
+			)
+		);
+
+		$hero_ids_to_remove = array_slice( $previous_hero_ids, self::HERO_MAX_TESTIMONIALS - 1 );
+
+		foreach ( $hero_ids_to_remove as $hero_id_to_remove ) {
+			delete_post_meta( (int) $hero_id_to_remove, self::HERO_ENABLED_META_KEY );
+		}
+
+		update_post_meta( $post_id, self::HERO_ENABLED_META_KEY, true );
+	}
+
 	public function sanitize_approval_year( mixed $value ): string {
 		$year         = is_scalar( $value ) ? (string) $value : '';
 		$current_year = (int) gmdate( 'Y' );
@@ -565,6 +607,38 @@ class Testimonials_Content_Domain {
 		}
 
 		return null;
+	}
+
+	public function is_hero_eligible( int $post_id ): bool {
+		return $this->is_verified_publication_eligible( $post_id )
+			&& (bool) get_post_meta( $post_id, self::HERO_ENABLED_META_KEY, true );
+	}
+
+	/**
+	 * @return WP_Post[]
+	 */
+	public function get_hero_testimonials( int $limit = self::HERO_MAX_TESTIMONIALS ): array {
+		$limit = max( 1, min( self::HERO_MAX_TESTIMONIALS, $limit ) );
+		$hero_testimonials = get_posts(
+			array(
+				'meta_key'       => self::HERO_ENABLED_META_KEY,
+				'meta_value'     => '1',
+				'order'          => 'DESC',
+				'orderby'        => 'modified',
+				'post_status'    => 'publish',
+				'post_type'      => self::POST_TYPE,
+				'posts_per_page' => self::HERO_MAX_TESTIMONIALS,
+			)
+		);
+
+		$hero_testimonials = array_values(
+			array_filter(
+				$hero_testimonials,
+				fn( WP_Post $testimonial ): bool => $this->is_hero_eligible( $testimonial->ID )
+			)
+		);
+
+		return array_slice( $hero_testimonials, 0, $limit );
 	}
 
 	private function is_verified_publication_eligible( int $post_id ): bool {

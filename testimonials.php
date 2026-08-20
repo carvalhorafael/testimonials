@@ -150,6 +150,13 @@ function testimonials_featured_story_meta_key(): string {
 }
 
 /**
+ * Returns the internal hero selection meta key.
+ */
+function testimonials_hero_enabled_meta_key(): string {
+	return Testimonials_Content_Domain::HERO_ENABLED_META_KEY;
+}
+
+/**
  * Determines whether a testimonial can be used as verifiable home proof.
  */
 function testimonials_is_home_proof_eligible( int $post_id ): bool {
@@ -168,6 +175,22 @@ function testimonials_is_featured_story_eligible( int $post_id ): bool {
  */
 function testimonials_get_featured_story(): ?WP_Post {
 	return testimonials()->content_domain()->get_featured_story();
+}
+
+/**
+ * Determines whether a testimonial can be used in the approved students hero.
+ */
+function testimonials_is_hero_eligible( int $post_id ): bool {
+	return testimonials()->content_domain()->is_hero_eligible( $post_id );
+}
+
+/**
+ * Returns up to three eligible testimonials selected for the approved students hero.
+ *
+ * @return WP_Post[]
+ */
+function testimonials_get_hero_testimonials( int $limit = Testimonials_Content_Domain::HERO_MAX_TESTIMONIALS ): array {
+	return testimonials()->content_domain()->get_hero_testimonials( $limit );
 }
 
 register_activation_hook( __FILE__, array( 'Testimonials_Plugin', 'activate' ) );

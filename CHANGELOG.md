@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Added a three-testimonial editorial selection contract for the approved students hero.
+
 ## 0.5.3 - featured story
 
 - Added a single featured story selection with verified-publication eligibility and a public retrieval helper.
