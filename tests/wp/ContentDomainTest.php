@@ -150,6 +150,18 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertArrayHasKey( $home_proof_meta_key, $registered_meta );
 		$this->assertSame( 'boolean', $registered_meta[ $home_proof_meta_key ]['type'] );
 		$this->assertFalse( $registered_meta[ $home_proof_meta_key ]['show_in_rest'] );
+
+		$featured_story_meta_key = testimonials_featured_story_meta_key();
+		$this->assertSame( '_testimonials_featured_story', $featured_story_meta_key );
+		$this->assertArrayHasKey( $featured_story_meta_key, $registered_meta );
+		$this->assertSame( 'boolean', $registered_meta[ $featured_story_meta_key ]['type'] );
+		$this->assertFalse( $registered_meta[ $featured_story_meta_key ]['show_in_rest'] );
+
+		$hero_meta_key = testimonials_hero_enabled_meta_key();
+		$this->assertSame( '_testimonials_hero_enabled', $hero_meta_key );
+		$this->assertArrayHasKey( $hero_meta_key, $registered_meta );
+		$this->assertSame( 'boolean', $registered_meta[ $hero_meta_key ]['type'] );
+		$this->assertFalse( $registered_meta[ $hero_meta_key ]['show_in_rest'] );
 	}
 
 	public function test_meta_box_renders_testimonial_fields(): void {
@@ -174,6 +186,8 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		update_post_meta( $post_id, testimonials_verification_status_meta_key(), Testimonials_Content_Domain::VERIFICATION_VERIFIED );
 		update_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), Testimonials_Content_Domain::CONSENT_CONFIRMED );
 		update_post_meta( $post_id, testimonials_home_proof_enabled_meta_key(), true );
+		update_post_meta( $post_id, testimonials_featured_story_meta_key(), true );
+		update_post_meta( $post_id, testimonials_hero_enabled_meta_key(), true );
 
 		ob_start();
 		testimonials()->content_domain()->render_meta_box( get_post( $post_id ) );
@@ -203,6 +217,8 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'name="testimonials_verification_status"', $output );
 		$this->assertStringContainsString( 'name="testimonials_publication_consent_status"', $output );
 		$this->assertStringContainsString( 'name="testimonials_home_proof_enabled"', $output );
+		$this->assertStringContainsString( 'name="testimonials_featured_story"', $output );
+		$this->assertStringContainsString( 'name="testimonials_hero_enabled"', $output );
 		$this->assertStringContainsString( 'checked=', $output );
 	}
 
@@ -232,6 +248,8 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$_POST['testimonials_verification_status']                = Testimonials_Content_Domain::VERIFICATION_VERIFIED;
 		$_POST['testimonials_publication_consent_status']         = Testimonials_Content_Domain::CONSENT_CONFIRMED;
 		$_POST['testimonials_home_proof_enabled']                 = '1';
+		$_POST['testimonials_featured_story']                     = '1';
+		$_POST['testimonials_hero_enabled']                       = '1';
 
 		testimonials()->content_domain()->save_meta_box( $post_id );
 
@@ -248,6 +266,8 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertSame( Testimonials_Content_Domain::VERIFICATION_VERIFIED, get_post_meta( $post_id, testimonials_verification_status_meta_key(), true ) );
 		$this->assertSame( Testimonials_Content_Domain::CONSENT_CONFIRMED, get_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), true ) );
 		$this->assertSame( '1', get_post_meta( $post_id, testimonials_home_proof_enabled_meta_key(), true ) );
+		$this->assertSame( '1', get_post_meta( $post_id, testimonials_featured_story_meta_key(), true ) );
+		$this->assertSame( '1', get_post_meta( $post_id, testimonials_hero_enabled_meta_key(), true ) );
 
 		$_POST['testimonials_video_url']    = '';
 		$_POST['testimonials_student_name'] = '';
@@ -262,6 +282,8 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$_POST['testimonials_verification_status'] = 'not-valid';
 		$_POST['testimonials_publication_consent_status'] = 'not-valid';
 		unset( $_POST['testimonials_home_proof_enabled'] );
+		unset( $_POST['testimonials_featured_story'] );
+		unset( $_POST['testimonials_hero_enabled'] );
 
 		testimonials()->content_domain()->save_meta_box( $post_id );
 
@@ -278,6 +300,79 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		$this->assertSame( Testimonials_Content_Domain::VERIFICATION_PENDING, get_post_meta( $post_id, testimonials_verification_status_meta_key(), true ) );
 		$this->assertSame( Testimonials_Content_Domain::CONSENT_UNKNOWN, get_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), true ) );
 		$this->assertSame( '', get_post_meta( $post_id, testimonials_home_proof_enabled_meta_key(), true ) );
+		$this->assertSame( '', get_post_meta( $post_id, testimonials_featured_story_meta_key(), true ) );
+		$this->assertSame( '', get_post_meta( $post_id, testimonials_hero_enabled_meta_key(), true ) );
+	}
+
+	public function test_saving_featured_story_replaces_previous_selection(): void {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$first_post_id = self::factory()->post->create(
+			array(
+				'post_status' => 'publish',
+				'post_title'  => 'First featured student',
+				'post_type'   => testimonials_post_type(),
+			)
+		);
+		$second_post_id = self::factory()->post->create(
+			array(
+				'post_status' => 'publish',
+				'post_title'  => 'Second featured student',
+				'post_type'   => testimonials_post_type(),
+			)
+		);
+
+		update_post_meta( $first_post_id, testimonials_featured_story_meta_key(), true );
+		$_POST[ Testimonials_Content_Domain::META_BOX_NONCE_NAME ] = wp_create_nonce( Testimonials_Content_Domain::META_BOX_NONCE_ACTION );
+		$_POST['testimonials_featured_story'] = '1';
+
+		testimonials()->content_domain()->save_meta_box( $second_post_id );
+
+		$this->assertSame( '', get_post_meta( $first_post_id, testimonials_featured_story_meta_key(), true ) );
+		$this->assertSame( '1', get_post_meta( $second_post_id, testimonials_featured_story_meta_key(), true ) );
+	}
+
+	public function test_saving_fourth_hero_testimonial_keeps_selection_limited_to_three(): void {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$hero_post_ids = self::factory()->post->create_many(
+			Testimonials_Content_Domain::HERO_MAX_TESTIMONIALS,
+			array(
+				'post_status' => 'publish',
+				'post_type'   => testimonials_post_type(),
+			)
+		);
+		$fourth_post_id = self::factory()->post->create(
+			array(
+				'post_status' => 'publish',
+				'post_type'   => testimonials_post_type(),
+			)
+		);
+
+		foreach ( $hero_post_ids as $hero_post_id ) {
+			update_post_meta( $hero_post_id, testimonials_hero_enabled_meta_key(), true );
+		}
+
+		$_POST[ Testimonials_Content_Domain::META_BOX_NONCE_NAME ] = wp_create_nonce( Testimonials_Content_Domain::META_BOX_NONCE_ACTION );
+		$_POST['testimonials_hero_enabled'] = '1';
+
+		testimonials()->content_domain()->save_meta_box( $fourth_post_id );
+
+		$selected_hero_ids = get_posts(
+			array(
+				'fields'         => 'ids',
+				'meta_key'       => testimonials_hero_enabled_meta_key(),
+				'meta_value'     => '1',
+				'post_status'    => 'any',
+				'post_type'      => testimonials_post_type(),
+				'posts_per_page' => -1,
+			)
+		);
+
+		$this->assertCount( Testimonials_Content_Domain::HERO_MAX_TESTIMONIALS, $selected_hero_ids );
+		$this->assertContains( $fourth_post_id, $selected_hero_ids );
 	}
 
 	public function test_home_proof_requires_verified_authorized_complete_published_record(): void {
@@ -311,6 +406,44 @@ final class ContentDomainTest extends WP_UnitTestCase {
 		update_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), Testimonials_Content_Domain::CONSENT_CONFIRMED );
 		delete_post_meta( $post_id, testimonials_evidence_reference_meta_key() );
 		$this->assertFalse( testimonials_is_home_proof_eligible( $post_id ) );
+	}
+
+	public function test_featured_story_helper_requires_verified_authorized_complete_record_with_quote(): void {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_content' => 'A Proenem me ajudou a conquistar minha vaga.',
+				'post_status'  => 'publish',
+				'post_title'   => 'Featured student',
+				'post_type'    => testimonials_post_type(),
+			)
+		);
+		$attachment_id = self::factory()->attachment->create_object(
+			'image.jpg',
+			$post_id,
+			array( 'post_mime_type' => 'image/jpeg' )
+		);
+		set_post_thumbnail( $post_id, $attachment_id );
+
+		update_post_meta( $post_id, testimonials_student_name_meta_key(), 'Maria Silva' );
+		update_post_meta( $post_id, testimonials_course_meta_key(), 'Medicina' );
+		update_post_meta( $post_id, testimonials_institution_meta_key(), 'USP' );
+		update_post_meta( $post_id, testimonials_evidence_reference_meta_key(), 'Registro interno 123' );
+		update_post_meta( $post_id, testimonials_verification_status_meta_key(), Testimonials_Content_Domain::VERIFICATION_VERIFIED );
+		update_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), Testimonials_Content_Domain::CONSENT_CONFIRMED );
+		update_post_meta( $post_id, testimonials_featured_story_meta_key(), true );
+		update_post_meta( $post_id, testimonials_hero_enabled_meta_key(), true );
+
+		$this->assertTrue( testimonials_is_featured_story_eligible( $post_id ) );
+		$this->assertSame( $post_id, testimonials_get_featured_story()->ID );
+		$this->assertTrue( testimonials_is_hero_eligible( $post_id ) );
+		$this->assertSame( array( $post_id ), wp_list_pluck( testimonials_get_hero_testimonials(), 'ID' ) );
+
+		update_post_meta( $post_id, testimonials_publication_consent_status_meta_key(), Testimonials_Content_Domain::CONSENT_REVOKED );
+
+		$this->assertFalse( testimonials_is_featured_story_eligible( $post_id ) );
+		$this->assertNull( testimonials_get_featured_story() );
+		$this->assertFalse( testimonials_is_hero_eligible( $post_id ) );
+		$this->assertSame( array(), testimonials_get_hero_testimonials() );
 	}
 
 	public function test_editorial_status_and_year_sanitizers_reject_invalid_values(): void {
