@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0 - bulk testimonial import
+
+- Added a reusable CSV import workflow with template download, validation, preview and per-row reports.
+- Added safe external image sideloading with featured images and editorial selection support.
+- Added duplicate protection through stable external IDs and private import audit metadata.
+- Added automatic publication for eligible imports and a direct bulk publish action for existing drafts.
+
 ## 0.5.4 - hero selection
 
 - Added a three-testimonial editorial selection contract for the approved students hero.
