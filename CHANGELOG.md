@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.4 - hero selection
 
 - Added a three-testimonial editorial selection contract for the approved students hero.
 

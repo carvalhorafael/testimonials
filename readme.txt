@@ -4,7 +4,7 @@ Tags: custom-post-type, testimonials, content
 Requires at least: 6.4
 Tested up to: 6.5
 Requires PHP: 8.1
-Stable tag: 0.5.3
+Stable tag: 0.5.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,11 @@ No. The active theme should provide templates and styling. This plugin owns the 
 It registers public editorial fields for the video URL, student name, approval summary, placement, course, institution, approval year, preparation time and main approval tip. Evidence references, verification, consent, home proof and featured story selection remain private.
 
 == Changelog ==
+
+= 0.5.4 =
+
+* Adds an editorial selection for up to three eligible testimonials in the approved students hero.
+* Automatically keeps the hero selection limited to the three most recently selected testimonials.
 
 = 0.5.3 =
 
