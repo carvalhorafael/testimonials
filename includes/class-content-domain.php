@@ -29,6 +29,7 @@ class Testimonials_Content_Domain {
 	public const VERIFICATION_STATUS_META_KEY        = '_testimonials_verification_status';
 	public const PUBLICATION_CONSENT_STATUS_META_KEY = '_testimonials_publication_consent_status';
 	public const HOME_PROOF_ENABLED_META_KEY         = '_testimonials_home_proof_enabled';
+	public const FEATURED_STORY_META_KEY             = '_testimonials_featured_story';
 	public const VERIFICATION_PENDING                = 'pending';
 	public const VERIFICATION_VERIFIED               = 'verified';
 	public const VERIFICATION_REJECTED               = 'rejected';
@@ -156,6 +157,7 @@ class Testimonials_Content_Domain {
 		$this->register_string_meta( self::VERIFICATION_STATUS_META_KEY, array( $this, 'sanitize_verification_status' ), false );
 		$this->register_string_meta( self::PUBLICATION_CONSENT_STATUS_META_KEY, array( $this, 'sanitize_publication_consent_status' ), false );
 		$this->register_boolean_meta( self::HOME_PROOF_ENABLED_META_KEY );
+		$this->register_boolean_meta( self::FEATURED_STORY_META_KEY );
 	}
 
 	public function register_meta_box(): void {
@@ -183,6 +185,7 @@ class Testimonials_Content_Domain {
 		$verification_status       = get_post_meta( $post->ID, self::VERIFICATION_STATUS_META_KEY, true );
 		$publication_consent_status = get_post_meta( $post->ID, self::PUBLICATION_CONSENT_STATUS_META_KEY, true );
 		$home_proof_enabled        = (bool) get_post_meta( $post->ID, self::HOME_PROOF_ENABLED_META_KEY, true );
+		$featured_story_enabled    = (bool) get_post_meta( $post->ID, self::FEATURED_STORY_META_KEY, true );
 
 		$verification_status        = $verification_status ? $verification_status : self::VERIFICATION_PENDING;
 		$publication_consent_status = $publication_consent_status ? $publication_consent_status : self::CONSENT_UNKNOWN;
@@ -321,6 +324,14 @@ class Testimonials_Content_Domain {
 			<br>
 			<small><?php esc_html_e( 'A marcação só produz efeito quando o depoimento está publicado, possui imagem destacada, nome, curso, instituição, fonte, dados verificados e autorização confirmada.', 'testimonials' ); ?></small>
 		</p>
+		<p>
+			<label>
+				<input name="testimonials_featured_story" type="checkbox" value="1"<?php checked( $featured_story_enabled ); ?>>
+				<?php esc_html_e( 'Usar como história em destaque', 'testimonials' ); ?>
+			</label>
+			<br>
+			<small><?php esc_html_e( 'Somente um depoimento pode ocupar o destaque. Ao salvar, esta seleção substitui a anterior e só é exibida quando o registro está completo, verificado e autorizado.', 'testimonials' ); ?></small>
+		</p>
 		<?php
 	}
 
@@ -356,6 +367,7 @@ class Testimonials_Content_Domain {
 		$this->save_choice_meta( $post_id, 'testimonials_verification_status', self::VERIFICATION_STATUS_META_KEY, array( $this, 'sanitize_verification_status' ) );
 		$this->save_choice_meta( $post_id, 'testimonials_publication_consent_status', self::PUBLICATION_CONSENT_STATUS_META_KEY, array( $this, 'sanitize_publication_consent_status' ) );
 		$this->save_boolean_meta( $post_id, 'testimonials_home_proof_enabled', self::HOME_PROOF_ENABLED_META_KEY );
+		$this->save_featured_story_meta( $post_id );
 	}
 
 	/**
@@ -459,6 +471,31 @@ class Testimonials_Content_Domain {
 		update_post_meta( $post_id, $meta_key, true );
 	}
 
+	private function save_featured_story_meta( int $post_id ): void {
+		if ( '1' !== $this->posted_scalar_value( 'testimonials_featured_story' ) ) {
+			delete_post_meta( $post_id, self::FEATURED_STORY_META_KEY );
+			return;
+		}
+
+		$previous_featured_ids = get_posts(
+			array(
+				'fields'         => 'ids',
+				'meta_key'       => self::FEATURED_STORY_META_KEY,
+				'meta_value'     => '1',
+				'post__not_in'   => array( $post_id ),
+				'post_status'    => 'any',
+				'post_type'      => self::POST_TYPE,
+				'posts_per_page' => -1,
+			)
+		);
+
+		foreach ( $previous_featured_ids as $previous_featured_id ) {
+			delete_post_meta( (int) $previous_featured_id, self::FEATURED_STORY_META_KEY );
+		}
+
+		update_post_meta( $post_id, self::FEATURED_STORY_META_KEY, true );
+	}
+
 	public function sanitize_approval_year( mixed $value ): string {
 		$year         = is_scalar( $value ) ? (string) $value : '';
 		$current_year = (int) gmdate( 'Y' );
@@ -497,6 +534,40 @@ class Testimonials_Content_Domain {
 	}
 
 	public function is_home_proof_eligible( int $post_id ): bool {
+		return $this->is_verified_publication_eligible( $post_id )
+			&& (bool) get_post_meta( $post_id, self::HOME_PROOF_ENABLED_META_KEY, true );
+	}
+
+	public function is_featured_story_eligible( int $post_id ): bool {
+		$post = get_post( $post_id );
+
+		return $post instanceof WP_Post
+			&& $this->is_verified_publication_eligible( $post_id )
+			&& '' !== trim( (string) $post->post_content . (string) $post->post_excerpt )
+			&& (bool) get_post_meta( $post_id, self::FEATURED_STORY_META_KEY, true );
+	}
+
+	public function get_featured_story(): ?WP_Post {
+		$featured_stories = get_posts(
+			array(
+				'meta_key'       => self::FEATURED_STORY_META_KEY,
+				'meta_value'     => '1',
+				'post_status'    => 'publish',
+				'post_type'      => self::POST_TYPE,
+				'posts_per_page' => -1,
+			)
+		);
+
+		foreach ( $featured_stories as $featured_story ) {
+			if ( $this->is_featured_story_eligible( $featured_story->ID ) ) {
+				return $featured_story;
+			}
+		}
+
+		return null;
+	}
+
+	private function is_verified_publication_eligible( int $post_id ): bool {
 		if ( self::POST_TYPE !== get_post_type( $post_id ) || 'publish' !== get_post_status( $post_id ) || ! has_post_thumbnail( $post_id ) ) {
 			return false;
 		}
@@ -515,8 +586,7 @@ class Testimonials_Content_Domain {
 		}
 
 		return self::VERIFICATION_VERIFIED === get_post_meta( $post_id, self::VERIFICATION_STATUS_META_KEY, true )
-			&& self::CONSENT_CONFIRMED === get_post_meta( $post_id, self::PUBLICATION_CONSENT_STATUS_META_KEY, true )
-			&& (bool) get_post_meta( $post_id, self::HOME_PROOF_ENABLED_META_KEY, true );
+			&& self::CONSENT_CONFIRMED === get_post_meta( $post_id, self::PUBLICATION_CONSENT_STATUS_META_KEY, true );
 	}
 
 	private function posted_scalar_value( string $post_key ): string {

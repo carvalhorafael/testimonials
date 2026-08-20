@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Testimonials
  * Description: Registers the reusable Testimonials content domain for WordPress sites.
- * Version: 0.5.2
+ * Version: 0.5.3
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author: Rafael Carvalho
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TESTIMONIALS_VERSION', '0.5.2' );
+define( 'TESTIMONIALS_VERSION', '0.5.3' );
 define( 'TESTIMONIALS_FILE', __FILE__ );
 define( 'TESTIMONIALS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TESTIMONIALS_BASENAME', plugin_basename( __FILE__ ) );
@@ -143,10 +143,31 @@ function testimonials_home_proof_enabled_meta_key(): string {
 }
 
 /**
+ * Returns the internal featured story selection meta key.
+ */
+function testimonials_featured_story_meta_key(): string {
+	return Testimonials_Content_Domain::FEATURED_STORY_META_KEY;
+}
+
+/**
  * Determines whether a testimonial can be used as verifiable home proof.
  */
 function testimonials_is_home_proof_eligible( int $post_id ): bool {
 	return testimonials()->content_domain()->is_home_proof_eligible( $post_id );
+}
+
+/**
+ * Determines whether a testimonial can be used as the featured story.
+ */
+function testimonials_is_featured_story_eligible( int $post_id ): bool {
+	return testimonials()->content_domain()->is_featured_story_eligible( $post_id );
+}
+
+/**
+ * Returns the single eligible testimonial selected as the featured story.
+ */
+function testimonials_get_featured_story(): ?WP_Post {
+	return testimonials()->content_domain()->get_featured_story();
 }
 
 register_activation_hook( __FILE__, array( 'Testimonials_Plugin', 'activate' ) );

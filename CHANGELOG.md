@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.3 - featured story
+
+- Added a single featured story selection with verified-publication eligibility and a public retrieval helper.
+- Added an editor control that replaces the previous featured selection when a new testimonial is chosen.
+
 ## 0.5.2 - approval superpowers
 
 - Added preparation time and a concise main approval tip as public testimonial metadata.

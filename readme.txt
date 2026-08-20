@@ -4,7 +4,7 @@ Tags: custom-post-type, testimonials, content
 Requires at least: 6.4
 Tested up to: 6.5
 Requires PHP: 8.1
-Stable tag: 0.5.2
+Stable tag: 0.5.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,7 +26,7 @@ The plugin registers:
 * `_testimonials_approval_year` metadata for the approval year.
 * `_testimonials_preparation_time` metadata for the student's preparation time.
 * `_testimonials_main_tip` metadata for the student's main approval tip.
-* Private editorial metadata for evidence, verification, publication consent and home proof selection.
+* Private editorial metadata for evidence, verification, publication consent, home proof and featured story selection.
 * `_testimonials_video_url` metadata for YouTube or other video URLs.
 * Rewrite rules for `/aprovados/` and `/aprovados/categoria/...`.
 * Title-based slugs for newly created testimonials, such as `/aprovados/nome-do-aluno/`.
@@ -45,9 +45,14 @@ No. The active theme should provide templates and styling. This plugin owns the 
 
 = Which testimonial metadata does this plugin register? =
 
-It registers public editorial fields for the video URL, student name, approval summary, placement, course, institution, approval year, preparation time and main approval tip. Evidence references, verification, consent and home proof selection remain private.
+It registers public editorial fields for the video URL, student name, approval summary, placement, course, institution, approval year, preparation time and main approval tip. Evidence references, verification, consent, home proof and featured story selection remain private.
 
 == Changelog ==
+
+= 0.5.3 =
+
+* Adds a single featured story selection with verified-publication eligibility.
+* Replaces the previous featured selection when a new testimonial is chosen.
 
 = 0.5.2 =
 
